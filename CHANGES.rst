@@ -8,6 +8,7 @@ vx.x.x (xxxx-xx-xx)
 - Add ``HashFS.get()`` method for retrieving a reader object given a file digest or path.
 - Add ``HashFS.delete()`` method for deleting a file digest or path.
 - Add ``HashFS.folders()`` method that returns the folder paths that directly contain files (i.e. subpaths that only contain folders are ignored).
+- Add ``HashFS.detokenize()`` method that returns the file digest contained in a file path.
 - Add ``HashFS.repair()`` method that reindexes any files under root directory whose file path doesn't not match its tokenized file digest.
 
 

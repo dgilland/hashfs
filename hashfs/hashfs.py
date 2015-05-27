@@ -180,20 +180,31 @@ class HashFS(object):
 
     def computehash(self, stream):
         """Compute hash of file using :attr:`algorithm`."""
-        hash = hashlib.new(self.algorithm)
+        hashobj = hashlib.new(self.algorithm)
         for data in stream:
-            hash.update(to_bytes(data))
-        return hash.hexdigest()
+            hashobj.update(to_bytes(data))
+        return hashobj.hexdigest()
 
-    def tokenize(self, id):
+    def tokenize(self, digest):
         """Convert content ID into tokens that will become the folder tree
         structure.
         """
         # This creates a list of `depth` number of tokens with length
         # `length` from the first part of the digest plus the remainder.
-        return compact([id[i * self.length:self.length * (i + 1)]
+        return compact([digest[i * self.length:self.length * (i + 1)]
                         for i in range(self.depth)] +
-                       [id[self.depth * self.length:]])
+                       [digest[self.depth * self.length:]])
+
+    def detokenize(self, path):
+        """Return tokenized path's hash value."""
+        if not self.haspath(path):
+            raise ValueError(('Cannot detokenize path. The path "{0}" is not '
+                              'a subdirectory of the root directory "{1}"'
+                              .format(path, self.root)))
+
+        path = os.path.realpath(path).split(self.root)[1]
+
+        return os.path.splitext(path)[0].replace(os.sep, '')
 
     def repair(self, use_extension=True):
         """Repair any file locations whose content address doesn't match it's
@@ -220,6 +231,11 @@ class HashFS(object):
 
             if expected_path != path:
                 yield (path, Address(expected_path, digest))
+
+
+class Address(namedtuple('Address', ['path', 'digest'])):
+    """File Address containing file's path on disk and it's content hash."""
+    pass
 
 
 class Stream(object):
@@ -273,11 +289,6 @@ class Stream(object):
             self._obj.close()
         else:
             self._obj.seek(self._pos)
-
-
-class Address(namedtuple('Address', ['path', 'digest'])):
-    """File Address containing file's path on disk and it's content hash."""
-    pass
 
 
 @contextmanager

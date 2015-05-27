@@ -106,7 +106,7 @@ def test_hashfs_put_extension(fs, stringio, extension):
     assert os.path.splitext(address.path)[1].endswith(extension)
 
 
-def test_hashfs_put_invalid(fs):
+def test_hashfs_put_error(fs):
     with pytest.raises(ValueError):
         fs.put('foo')
 
@@ -130,7 +130,7 @@ def test_hashfs_get(fs, stringio, extension, address_attr):
     fileobj.close()
 
 
-def test_hashfs_get_invalid(fs):
+def test_hashfs_get_error(fs):
     with pytest.raises(IOError):
         fs.get('invalid')
 
@@ -146,7 +146,7 @@ def test_hashfs_delete(fs, stringio, address_attr):
     assert len(os.listdir(fs.root)) == 0
 
 
-def test_hashfs_delete_invalid(fs):
+def test_hashfs_delete_error(fs):
     fs.delete('invalid')
 
 
@@ -179,6 +179,16 @@ def test_hashfs_remove_empty_subdir(fs):
     fs.remove_empty(os.path.realpath(os.path.join(fs.root, '..')))
 
     assert os.path.exists(fs.root)
+
+
+def test_hashfs_detokenize(fs, stringio):
+    address = fs.put(stringio)
+    assert fs.detokenize(address.path) == address.digest
+
+
+def test_hashfs_detokenize_error(fs):
+    with pytest.raises(ValueError):
+        fs.detokenize('invalid')
 
 
 def test_hashfs_repair(fs, testfile):
