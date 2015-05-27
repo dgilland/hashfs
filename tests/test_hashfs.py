@@ -7,6 +7,7 @@ import py
 import pytest
 
 import hashfs
+from hashfs._compat import to_bytes
 
 
 @pytest.fixture
@@ -71,7 +72,7 @@ def test_hashfs_put_stringio(fs, stringio):
     assert_file_put(fs, address)
 
     with open(address.path, 'rb') as fileobj:
-        assert fileobj.read() == stringio.getvalue().encode('utf8')
+        assert fileobj.read() == to_bytes(stringio.getvalue())
 
 
 def test_hashfs_put_fileobj(fs, fileio):
@@ -89,7 +90,7 @@ def test_hashfs_put_file(fs, filepath):
     assert_file_put(fs, address)
 
     with open(address.path, 'rb') as fileobj:
-        assert fileobj.read() == filepath.read().encode('utf8')
+        assert fileobj.read() == to_bytes(filepath.read())
 
 
 @pytest.mark.parametrize('extension', [
@@ -125,7 +126,7 @@ def test_hashfs_get(fs, stringio, extension, address_attr):
     fileobj = fs.get(getattr(address, address_attr))
 
     assert isinstance(fileobj, BufferedReader)
-    assert fileobj.read() == stringio.getvalue()
+    assert fileobj.read() == to_bytes(stringio.getvalue())
 
     fileobj.close()
 
