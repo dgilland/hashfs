@@ -4,7 +4,7 @@ Changelog
 =========
 
 
-v0.0.0 (xxxx-xx-xx)
+v0.0.1 (2015-05-26)
 -------------------
 
 - First release.
