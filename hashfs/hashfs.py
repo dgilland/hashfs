@@ -102,7 +102,10 @@ class HashFS(object):
     def files(self):
         """Return generator that yields all files under :attr:`root` directory.
         """
-        return walkfiles(self.root)
+        for folder, subfolders, files in os.walk(self.root):
+            for file_ in files:
+                yield os.path.abspath(os.path.join(folder, file_))
+
 
     def exists(self, digest_or_path):
         """Check whether a given file digest exsists on disk."""
