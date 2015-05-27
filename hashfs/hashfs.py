@@ -210,14 +210,24 @@ class HashFS(object):
         """Repair any file locations whose content address doesn't match it's
         file path.
         """
-        corrupted = tuple(self.corrupted())
         repaired = []
+        corrupted = tuple(self.corrupted())
+        oldmask = os.umask(0)
 
-        for path, address in corrupted:
-            repaired.append((path, address))
+        try:
+            for path, address in corrupted:
+                if os.path.isfile(address.path):
+                    # File already exists so just delete corrupted path.
+                    os.remove(path)
+                else:
+                    # File doesn't exists so move it.
+                    self.makepath(os.path.dirname(address.path))
+                    shutil.move(path, address.path)
 
-            self.makepath(address.path)
-            shutil.move(path, address.path)
+                os.chmod(address.path, self.fmode)
+                repaired.append((path, address))
+        finally:
+            os.umask(oldmask)
 
         return repaired
 
