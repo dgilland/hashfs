@@ -2,6 +2,9 @@ Changelog
 =========
 
 
+- Add ``HashFS.get`` for retrieving a reader object given a file digest or path.
+
+
 v0.0.1 (2015-05-27)
 -------------------
 

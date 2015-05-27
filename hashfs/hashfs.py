@@ -60,16 +60,22 @@ class HashFS(object):
 
         return Address(filepath, digest)
 
+    def get(self, digest_or_path, mode='rb'):
+        """Return fileobj from given digest or path."""
+        realpath = self.realpath(digest_or_path)
+        if realpath is None:
+            raise IOError('Could not locate file: {0}'.format(digest_or_path))
+
+        return io.open(realpath, mode)
+
     def files(self):
         """Return generator that yields all files under :attr:`root` directory.
         """
         return walkfiles(self.root)
 
-    def exists(self, digest):
+    def exists(self, digest_or_path):
         """Check whether a given file digest exsists on disk."""
-        path = self.filepath(digest)
-        # Match using exact path or glob with wildcard extension.
-        return os.path.isfile(path) or glob.glob(path + '.*')
+        return bool(self.realpath(digest_or_path))
 
     def makepath(self, path):
         """Physically create the folder path on disk."""
@@ -89,12 +95,28 @@ class HashFS(object):
 
         return filepath
 
-    def computehash(self, stream):
-        """Compute hash of file using :attr:`algorithm`."""
-        hash = hashlib.new(self.algorithm)
-        for data in stream:
-            hash.update(to_bytes(data))
-        return hash.hexdigest()
+    def realpath(self, digest_or_path):
+        """Attempt to determine the real path of a file digest or path through
+        successive checking of candidate paths. If the real path is stored with
+        an extension, the path is considered a match if the basename matches
+        the expected file path of the digest.
+        """
+        # Check for direct match.
+        if os.path.isfile(digest_or_path):
+            return digest_or_path
+
+        # Check if tokenized digest matches.
+        filepath = self.filepath(digest_or_path)
+        if os.path.isfile(filepath):
+            return filepath
+
+        # Check if tokenized digest with any extension matches.
+        paths = glob.glob('{0}.*'.format(filepath))
+        if paths:
+            return paths[0]
+
+        # Could not determine a match.
+        return None
 
     def filepath(self, digest, extension=''):
         """Build the file path for a given hash digest. Optionally, append a
@@ -108,6 +130,13 @@ class HashFS(object):
             extension = ''
 
         return os.path.join(self.root, *paths) + extension
+
+    def computehash(self, stream):
+        """Compute hash of file using :attr:`algorithm`."""
+        hash = hashlib.new(self.algorithm)
+        for data in stream:
+            hash.update(to_bytes(data))
+        return hash.hexdigest()
 
     def tokenize(self, id):
         """Convert content ID into tokens that will become the folder tree

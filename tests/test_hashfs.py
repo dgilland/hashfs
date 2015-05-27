@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from io import StringIO
+from io import StringIO, BufferedReader
 import os
 
 import pytest
@@ -103,3 +103,23 @@ def test_hashfs_put_invalid(testpath):
 
     with pytest.raises(ValueError):
         fs.put('foo')
+
+
+@pytest.mark.parametrize('extension,address_attr', [
+    ('', 'digest'),
+    ('.txt', 'digest'),
+    ('txt', 'digest'),
+    ('', 'path'),
+    ('.txt', 'path'),
+    ('txt', 'path'),
+])
+def test_hashfs_get(testpath, stringio, extension, address_attr):
+    fs = hashfs.HashFS(str(testpath))
+    address = fs.put(stringio, extension)
+
+    fileobj = fs.get(getattr(address, address_attr))
+
+    assert isinstance(fileobj, BufferedReader)
+    assert fileobj.read() == stringio.getvalue()
+
+    fileobj.close()
