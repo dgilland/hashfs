@@ -60,8 +60,8 @@ def assert_file_put(fs, address):
     dir_parts = [part for part in directory.split(os.path.sep) if part]
 
     assert address.path in tuple(py.path.local(fs.root).visit())
-    assert fs.exists(address.digest)
-    assert os.path.splitext(path.replace(os.path.sep, ''))[0] == address.digest
+    assert fs.exists(address.id)
+    assert os.path.splitext(path.replace(os.path.sep, ''))[0] == address.id
     assert len(dir_parts) == fs.depth
     assert all(len(part) == fs.length for part in dir_parts)
 
@@ -113,9 +113,9 @@ def test_hashfs_put_error(fs):
 
 
 @pytest.mark.parametrize('extension,address_attr', [
-    ('', 'digest'),
-    ('.txt', 'digest'),
-    ('txt', 'digest'),
+    ('', 'id'),
+    ('.txt', 'id'),
+    ('txt', 'id'),
     ('', 'path'),
     ('.txt', 'path'),
     ('txt', 'path'),
@@ -137,7 +137,7 @@ def test_hashfs_get_error(fs):
 
 
 @pytest.mark.parametrize('address_attr', [
-   'digest',
+   'id',
    'path',
 ])
 def test_hashfs_delete(fs, stringio, address_attr):
@@ -184,7 +184,7 @@ def test_hashfs_remove_empty_subdir(fs):
 
 def test_hashfs_detokenize(fs, stringio):
     address = fs.put(stringio)
-    assert fs.detokenize(address.path) == address.digest
+    assert fs.detokenize(address.path) == address.id
 
 
 def test_hashfs_detokenize_error(fs):
@@ -216,7 +216,7 @@ def test_hashfs_files(fs):
         assert os.path.isfile(file_)
         assert file_ in addresses
         assert addresses[file_].path == file_
-        assert addresses[file_].digest == fs.detokenize(file_)
+        assert addresses[file_].id == fs.detokenize(file_)
 
 
 def test_hashfs_folders(fs):

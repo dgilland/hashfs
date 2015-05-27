@@ -2,8 +2,6 @@
 """The hashfs library is a content addressable file management system.
 """
 
-from .hashfs import HashFS
-
 from .__meta__ import (
     __title__,
     __summary__,
@@ -13,5 +11,8 @@ from .__meta__ import (
     __email__,
     __license__
 )
+
+from .hashfs import HashFS
+
 
 __all__ = ['HashFS']

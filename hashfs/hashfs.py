@@ -55,24 +55,24 @@ class HashFS(object):
         stream = Stream(obj)
 
         with closing(stream):
-            digest = self.computehash(stream)
-            filepath = self.copy(stream, digest, extension)
+            id = self.computehash(stream)
+            filepath = self.copy(stream, id, extension)
 
-        return Address(filepath, digest)
+        return Address(id, filepath)
 
-    def get(self, digest_or_path, mode='rb'):
-        """Return fileobj from given digest or path."""
-        realpath = self.realpath(digest_or_path)
+    def get(self, id_or_path, mode='rb'):
+        """Return fileobj from given id or path."""
+        realpath = self.realpath(id_or_path)
         if realpath is None:
-            raise IOError('Could not locate file: {0}'.format(digest_or_path))
+            raise IOError('Could not locate file: {0}'.format(id_or_path))
 
         return io.open(realpath, mode)
 
-    def delete(self, digest_or_path):
-        """Delete file using digest or path. Remove any empty directories after
+    def delete(self, id_or_path):
+        """Delete file using id or path. Remove any empty directories after
         deleting.
         """
-        realpath = self.realpath(digest_or_path)
+        realpath = self.realpath(id_or_path)
         if realpath is None:
             return
 
@@ -114,9 +114,9 @@ class HashFS(object):
             if files:
                 yield folder
 
-    def exists(self, digest_or_path):
-        """Check whether a given file digest exsists on disk."""
-        return bool(self.realpath(digest_or_path))
+    def exists(self, id_or_path):
+        """Check whether a given file id exsists on disk."""
+        return bool(self.realpath(id_or_path))
 
     def haspath(self, path):
         """Return whether `path` is a subdirectory of the :attr:`root`
@@ -128,12 +128,12 @@ class HashFS(object):
         """Physically create the folder path on disk."""
         mkpath(path, mode=self.dmode)
 
-    def copy(self, stream, digest, extension=None):
+    def copy(self, stream, id, extension=None):
         """Copy the contents of `stream` onto disk with an optional file
         extension appended. The copy process using a temporary file to store
         the initial contents and then moves this file to it's final location.
         """
-        filepath = self.filepath(digest, extension)
+        filepath = self.filepath(id, extension)
 
         if not os.path.isfile(filepath):
             with tmpfile(stream, self.fmode) as fname:
@@ -142,22 +142,22 @@ class HashFS(object):
 
         return filepath
 
-    def realpath(self, digest_or_path):
-        """Attempt to determine the real path of a file digest or path through
+    def realpath(self, id_or_path):
+        """Attempt to determine the real path of a file id or path through
         successive checking of candidate paths. If the real path is stored with
         an extension, the path is considered a match if the basename matches
-        the expected file path of the digest.
+        the expected file path of the id.
         """
         # Check for direct match.
-        if os.path.isfile(digest_or_path):
-            return digest_or_path
+        if os.path.isfile(id_or_path):
+            return id_or_path
 
-        # Check if tokenized digest matches.
-        filepath = self.filepath(digest_or_path)
+        # Check if tokenized id matches.
+        filepath = self.filepath(id_or_path)
         if os.path.isfile(filepath):
             return filepath
 
-        # Check if tokenized digest with any extension matches.
+        # Check if tokenized id with any extension matches.
         paths = glob.glob('{0}.*'.format(filepath))
         if paths:
             return paths[0]
@@ -165,11 +165,11 @@ class HashFS(object):
         # Could not determine a match.
         return None
 
-    def filepath(self, digest, extension=''):
-        """Build the file path for a given hash digest. Optionally, append a
+    def filepath(self, id, extension=''):
+        """Build the file path for a given hash id. Optionally, append a
         file extension.
         """
-        paths = self.tokenize(digest)
+        paths = self.tokenize(id)
 
         if extension and not extension.startswith(os.extsep):
             extension = os.extsep + extension
@@ -185,15 +185,15 @@ class HashFS(object):
             hashobj.update(to_bytes(data))
         return hashobj.hexdigest()
 
-    def tokenize(self, digest):
+    def tokenize(self, id):
         """Convert content ID into tokens that will become the folder tree
         structure.
         """
         # This creates a list of `depth` number of tokens with length
-        # `length` from the first part of the digest plus the remainder.
-        return compact([digest[i * self.length:self.length * (i + 1)]
+        # `length` from the first part of the id plus the remainder.
+        return compact([id[i * self.length:self.length * (i + 1)]
                         for i in range(self.depth)] +
-                       [digest[self.depth * self.length:]])
+                       [id[self.depth * self.length:]])
 
     def detokenize(self, path):
         """Return tokenized path's hash value."""
@@ -237,16 +237,16 @@ class HashFS(object):
             stream = Stream(path)
 
             with closing(stream):
-                digest = self.computehash(stream)
+                id = self.computehash(stream)
 
             extension = os.path.splitext(path)[1] if use_extension else None
-            expected_path = self.filepath(digest, extension)
+            expected_path = self.filepath(id, extension)
 
             if expected_path != path:
-                yield (path, Address(expected_path, digest))
+                yield (path, Address(id, expected_path))
 
 
-class Address(namedtuple('Address', ['path', 'digest'])):
+class Address(namedtuple('Address', ['id', 'path'])):
     """File Address containing file's path on disk and it's content hash."""
     pass
 
