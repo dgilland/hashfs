@@ -1,0 +1,8 @@
+pep8
+pylint
+pytest-cov
+pytest
+Sphinx
+tox
+twine
+wheel

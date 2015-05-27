@@ -1,0 +1,21 @@
+# Config file for automatic testing at travis-ci.org
+
+language: python
+
+python:
+  - "2.7"
+  - "3.3"
+  - "3.4"
+
+# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
+install:
+  - make travisci-install
+
+# command to run tests, e.g. python setup.py test
+script:
+  - make travisci-test
+
+# tasks to execute after successful test
+after_success:
+  - pip install python-coveralls --use-mirrors
+  - coveralls
