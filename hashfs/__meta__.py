@@ -2,9 +2,9 @@
 """Define project metadata
 """
 
-__title__ = 'shed'
+__title__ = 'hashfs'
 __summary__ = 'A content-addressable file management system.'
-__url__ = 'https://github.com/dgilland/shed'
+__url__ = 'https://github.com/dgilland/hashfs'
 
 __version__ = '0.0.1'
 

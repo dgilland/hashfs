@@ -13,7 +13,7 @@ from .utils import walkfiles, compact
 from ._compat import to_bytes
 
 
-class Shed(object):
+class HashFS(object):
     """Content addressable file manager.
 
     Args:

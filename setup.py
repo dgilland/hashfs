@@ -12,7 +12,7 @@ def read(fname):
 
 
 meta = {}
-exec(read('shed/__meta__.py'), meta)
+exec(read('hashfs/__meta__.py'), meta)
 
 readme = read('README.rst')
 changes = read('CHANGES.rst')
@@ -55,7 +55,7 @@ setup(
     tests_require=meta['__tests_require__'],
     cmdclass={'test': Tox},
     test_suite='tests',
-    keywords='shed',
+    keywords='hashfs',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',

@@ -5,7 +5,7 @@ API Reference
 
 .. testsetup::
 
-    from shed import *
+    from hashfs import *
 
 
-.. automodule:: shed
+.. automodule:: hashfs

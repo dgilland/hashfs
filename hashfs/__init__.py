@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""The shed library is a content addressable file management system.
+"""The hashfs library is a content addressable file management system.
 """
 
-from .shed import Shed
+from .hashfs import HashFS
 
 from .__meta__ import (
     __title__,
@@ -14,4 +14,4 @@ from .__meta__ import (
     __license__
 )
 
-__all__ = ['Shed']
+__all__ = ['HashFS']

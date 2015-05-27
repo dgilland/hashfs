@@ -1,5 +1,5 @@
 ****
-Shed
+HashFS
 ****
 
 |version| |travis| |coveralls| |license|
@@ -11,10 +11,10 @@ A content-addressable file management system.
 Links
 =====
 
-- Project: https://github.com/dgilland/shed
-- Documentation: http://shed.readthedocs.org
-- PyPI: https://pypi.python.org/pypi/shed/
-- TravisCI: https://travis-ci.org/dgilland/shed
+- Project: https://github.com/dgilland/hashfs
+- Documentation: http://hashfs.readthedocs.org
+- PyPI: https://pypi.python.org/pypi/hashfs/
+- TravisCI: https://travis-ci.org/dgilland/hashfs
 
 
 Quickstart
@@ -25,22 +25,22 @@ Install using pip:
 
 ::
 
-    pip install shed
+    pip install hashfs
 
 
 
-For more details, please see the full documentation at http://shed.readthedocs.org.
+For more details, please see the full documentation at http://hashfs.readthedocs.org.
 
 
 
-.. |version| image:: http://img.shields.io/pypi/v/shed.svg?style=flat-square
-    :target: https://pypi.python.org/pypi/shed/
+.. |version| image:: http://img.shields.io/pypi/v/hashfs.svg?style=flat-square
+    :target: https://pypi.python.org/pypi/hashfs/
 
-.. |travis| image:: http://img.shields.io/travis/dgilland/shed/master.svg?style=flat-square
-    :target: https://travis-ci.org/dgilland/shed
+.. |travis| image:: http://img.shields.io/travis/dgilland/hashfs/master.svg?style=flat-square
+    :target: https://travis-ci.org/dgilland/hashfs
 
-.. |coveralls| image:: http://img.shields.io/coveralls/dgilland/shed/master.svg?style=flat-square
-    :target: https://coveralls.io/r/dgilland/shed
+.. |coveralls| image:: http://img.shields.io/coveralls/dgilland/hashfs/master.svg?style=flat-square
+    :target: https://coveralls.io/r/dgilland/hashfs
 
-.. |license| image:: http://img.shields.io/pypi/l/shed.svg?style=flat-square
-    :target: https://pypi.python.org/pypi/shed/
+.. |license| image:: http://img.shields.io/pypi/l/hashfs.svg?style=flat-square
+    :target: https://pypi.python.org/pypi/hashfs/

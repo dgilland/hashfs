@@ -1,4 +1,4 @@
-.. shed documentation master file
+.. hashfs documentation master file
 
 .. include:: ../README.rst
 

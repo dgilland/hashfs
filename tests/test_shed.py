@@ -5,17 +5,17 @@ import os
 
 import pytest
 
-import shed
+import hashfs
 
 
 @pytest.fixture
 def testpath(tmpdir):
-    return tmpdir.mkdir('shed')
+    return tmpdir.mkdir('hashfs')
 
 
 @pytest.fixture
 def testfile(testpath):
-    return testpath.join('shed.txt')
+    return testpath.join('hashfs.txt')
 
 
 @pytest.fixture
@@ -53,8 +53,8 @@ def assert_file_put(testpath, fs, address):
     assert all(len(part) == fs.length for part in dir_parts)
 
 
-def test_shed_put_stringio(testpath, stringio):
-    fs = shed.Shed(str(testpath))
+def test_hashfs_put_stringio(testpath, stringio):
+    fs = hashfs.HashFS(str(testpath))
     address = fs.put(stringio)
 
     assert_file_put(testpath, fs, address)
@@ -63,8 +63,8 @@ def test_shed_put_stringio(testpath, stringio):
         assert fileobj.read() == stringio.getvalue().encode('utf8')
 
 
-def test_shed_put_fileobj(testpath, fileio):
-    fs = shed.Shed(str(testpath))
+def test_hashfs_put_fileobj(testpath, fileio):
+    fs = hashfs.HashFS(str(testpath))
     address = fs.put(fileio)
 
     assert_file_put(testpath, fs, address)
@@ -73,8 +73,8 @@ def test_shed_put_fileobj(testpath, fileio):
         assert fileobj.read() == fileio.read()
 
 
-def test_shed_put_file(testpath, filepath):
-    fs = shed.Shed(str(testpath))
+def test_hashfs_put_file(testpath, filepath):
+    fs = hashfs.HashFS(str(testpath))
     address = fs.put(str(filepath))
 
     assert_file_put(testpath, fs, address)
@@ -89,8 +89,8 @@ def test_shed_put_file(testpath, filepath):
     'md',
     '.md'
 ])
-def test_shed_put_extension(testpath, stringio, extension):
-    fs = shed.Shed(str(testpath))
+def test_hashfs_put_extension(testpath, stringio, extension):
+    fs = hashfs.HashFS(str(testpath))
     address = fs.put(stringio, extension)
 
     assert_file_put(testpath, fs, address)
@@ -98,8 +98,8 @@ def test_shed_put_extension(testpath, stringio, extension):
     assert os.path.splitext(address.path)[1].endswith(extension)
 
 
-def test_shed_put_invalid(testpath):
-    fs = shed.Shed(str(testpath))
+def test_hashfs_put_invalid(testpath):
+    fs = hashfs.HashFS(str(testpath))
 
     with pytest.raises(ValueError):
         fs.put('foo')
