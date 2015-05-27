@@ -53,9 +53,9 @@ class HashFS(object):
         address.
         """
         stream = Stream(obj)
-        digest = self.computehash(stream)
 
         with closing(stream):
+            digest = self.computehash(stream)
             filepath = self.copy(stream, digest, extension)
 
         return Address(filepath, digest)
@@ -235,7 +235,10 @@ class HashFS(object):
         """Return generator that yields corrupted files."""
         for path in self.files():
             stream = Stream(path)
-            digest = self.computehash(stream)
+
+            with closing(stream):
+                digest = self.computehash(stream)
+
             extension = os.path.splitext(path)[1] if use_extension else None
             expected_path = self.filepath(digest, extension)
 
