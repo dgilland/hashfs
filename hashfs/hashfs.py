@@ -9,7 +9,7 @@ import os
 import shutil
 from tempfile import NamedTemporaryFile
 
-from .utils import walkfiles, compact
+from .utils import compact, issubdir
 from ._compat import to_bytes
 
 
@@ -90,7 +90,7 @@ class HashFS(object):
         """
         # Don't attempt to remove any folders if subpath is not a
         # subdirectory of the root directory.
-        if not issubdir(subpath, self.root):
+        if not self.haspath(subpath):
             return
 
         while subpath != self.root:
@@ -110,6 +110,12 @@ class HashFS(object):
     def exists(self, digest_or_path):
         """Check whether a given file digest exsists on disk."""
         return bool(self.realpath(digest_or_path))
+
+    def haspath(self, path):
+        """Return whether `path` is a subdirectory of the :attr:`root`
+        directory.
+        """
+        return issubdir(path, self.root)
 
     def makepath(self, path):
         """Physically create the folder path on disk."""
