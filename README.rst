@@ -1,6 +1,6 @@
-****
+******
 HashFS
-****
+******
 
 |version| |travis| |coveralls| |license|
 
