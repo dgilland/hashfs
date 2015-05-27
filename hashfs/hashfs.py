@@ -106,6 +106,13 @@ class HashFS(object):
             for file_ in files:
                 yield os.path.abspath(os.path.join(folder, file_))
 
+    def folders(self):
+        """Return generator that yields all folders under :attr:`root`
+        directory that directly contain files.
+        """
+        for folder, subfolders, files in os.walk(self.root):
+            if files:
+                yield folder
 
     def exists(self, digest_or_path):
         """Check whether a given file digest exsists on disk."""

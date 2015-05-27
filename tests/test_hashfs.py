@@ -47,6 +47,12 @@ def fs(testpath):
     return hashfs.HashFS(str(testpath))
 
 
+def put_range(fs, count):
+    return dict((addr.path, addr)
+                for addr in (fs.put(StringIO(u'{0}'.format(i)))
+                             for i in range(count)))
+
+
 def assert_file_put(fs, address):
     path = address.path[len(fs.root):]
     directory = os.path.dirname(path)
@@ -190,12 +196,25 @@ def test_hashfs_repair(fs, testfile):
 
 def test_hashfs_files(fs):
     count = 5
-    for i in range(count):
-        fs.put(StringIO(u'{0}'.format(i)))
-
+    addresses = put_range(fs, count)
     files = list(fs.files())
 
     assert len(files) == count
 
     for file_ in files:
         assert os.path.isfile(file_)
+        assert file_ in addresses
+        assert addresses[file_].path == file_
+        assert addresses[file_].digest == fs.detokenize(file_)
+
+
+def test_hashfs_folders(fs):
+    count = 5
+    addresses = put_range(fs, count)
+    folders = list(fs.folders())
+
+    assert len(folders) == count
+
+    for folder in folders:
+        assert os.path.exists(folder)
+        assert os.path.isfile(os.path.join(folder, os.listdir(folder)[0]))
