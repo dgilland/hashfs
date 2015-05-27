@@ -8,6 +8,14 @@ def compact(items):
     return [item for item in items if item]
 
 
+def issubdir(subpath, path):
+    """Return whether `subpath` is a sub-directory of `path`."""
+    # Append os.sep so that paths like /usr/var2/log doesn't match /usr/var.
+    path = os.path.realpath(path) + os.sep
+    subpath = os.path.realpath(subpath)
+    return subpath.startswith(path)
+
+
 def walk(path,
          folders=True,
          files=True,

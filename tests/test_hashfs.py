@@ -125,8 +125,54 @@ def test_hashfs_get(fs, stringio, extension, address_attr):
 
 
 def test_hashfs_repair(testpath, testfile):
+@pytest.mark.parametrize('address_attr', [
+   'digest',
+   'path',
+])
+def test_hashfs_delete(fs, stringio, address_attr):
+    address = fs.put(stringio)
+
+    fs.delete(getattr(address, address_attr))
+    assert len(os.listdir(fs.root)) == 0
+
+
+def test_hashfs_delete_invalid(fs):
+    fs.delete('invalid')
+
+
+def test_hashfs_remove_empty(fs):
+    subpath1 = os.path.join(fs.root, '1', '2', '3')
+    subpath2 = os.path.join(fs.root, '1', '4', '5')
+    subpath3 = os.path.join(fs.root, '6', '7', '8')
+
+    fs.makepath(subpath1)
+    fs.makepath(subpath2)
+    fs.makepath(subpath3)
+
+    assert os.path.exists(subpath1)
+    assert os.path.exists(subpath2)
+    assert os.path.exists(subpath3)
+
+    fs.remove_empty(subpath1)
+    fs.remove_empty(subpath3)
+
+    assert not os.path.exists(subpath1)
+    assert os.path.exists(subpath2)
+    assert not os.path.exists(subpath3)
+
+
+def test_hashfs_remove_empty_subdir(fs):
+    fs.remove_empty(fs.root)
+
+    assert os.path.exists(fs.root)
+
+    fs.remove_empty(os.path.realpath(os.path.join(fs.root, '..')))
+
+    assert os.path.exists(fs.root)
+
+
+def test_hashfs_repair(fs, testfile):
     testfile.write('qux')
-    fs = hashfs.HashFS(str(testpath))
 
     assert os.path.isfile(str(testfile))
 

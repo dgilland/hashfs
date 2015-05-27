@@ -68,6 +68,37 @@ class HashFS(object):
 
         return io.open(realpath, mode)
 
+    def delete(self, digest_or_path):
+        """Delete file using digest or path. Remove any empty directories after
+        deleting.
+        """
+        realpath = self.realpath(digest_or_path)
+        if realpath is None:
+            return
+
+        try:
+            os.remove(realpath)
+        except OSError:  # pragma: no cover
+            pass
+        else:
+            self.remove_empty(os.path.dirname(realpath))
+
+    def remove_empty(self, subpath):
+        """Successively remove all empty folders starting with `subpath` and
+        proceeding "up" through directory tree until reaching the :attr:`root`
+        folder.
+        """
+        # Don't attempt to remove any folders if subpath is not a
+        # subdirectory of the root directory.
+        if not issubdir(subpath, self.root):
+            return
+
+        while subpath != self.root:
+            if len(os.listdir(subpath)) > 0 or os.path.islink(subpath):
+                break
+            os.rmdir(subpath)
+            subpath = os.path.dirname(subpath)
+
     def files(self):
         """Return generator that yields all files under :attr:`root` directory.
         """

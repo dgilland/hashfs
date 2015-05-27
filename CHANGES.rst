@@ -2,8 +2,11 @@ Changelog
 =========
 
 
-- Add ``HashFS.get`` for retrieving a reader object given a file digest or path.
-- Add ``HashFS.repair`` which reindexes any files under root directory whose file path doesn't not match its tokenized file digest.
+vx.x.x (xxxx-xx-xx)
+-------------------
+
+- Add ``HashFS.get()`` method for retrieving a reader object given a file digest or path.
+- Add ``HashFS.delete()`` method for deleting a file digest or path.
 
 
 v0.0.1 (2015-05-27)
@@ -11,6 +14,6 @@ v0.0.1 (2015-05-27)
 
 - First release.
 - Add ``HashFS`` class.
-- Add ``HashFS.put`` method that saves a file path or file-like object by content hash.
-- Add ``HashFS.files`` method that returns all files under root directory.
-- Add ``HashFS.exists`` which checks either a file hash or file path for existence.
+- Add ``HashFS.put()`` method that saves a file path or file-like object by content hash.
+- Add ``HashFS.files()`` method that returns all files under root directory.
+- Add ``HashFS.exists()`` which checks either a file hash or file path for existence.
