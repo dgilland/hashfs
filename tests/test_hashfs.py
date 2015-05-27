@@ -186,3 +186,16 @@ def test_hashfs_repair(fs, testfile):
     assert original_path == str(testfile)
     assert not os.path.isfile(original_path)
     assert_file_put(fs, address)
+
+
+def test_hashfs_files(fs):
+    count = 5
+    for i in range(count):
+        fs.put(StringIO(u'{0}'.format(i)))
+
+    files = list(fs.files())
+
+    assert len(files) == count
+
+    for file_ in files:
+        assert os.path.isfile(file_)
