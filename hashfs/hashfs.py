@@ -148,6 +148,32 @@ class HashFS(object):
                         for i in range(self.depth)] +
                        [id[self.depth * self.length:]])
 
+    def repair(self, use_extension=True):
+        """Repair any file locations whose content address doesn't match it's
+        file path.
+        """
+        corrupted = tuple(self.corrupted())
+        repaired = []
+
+        for path, address in corrupted:
+            repaired.append((path, address))
+
+            self.makepath(address.path)
+            shutil.move(path, address.path)
+
+        return repaired
+
+    def corrupted(self, use_extension=True):
+        """Return generator that yields corrupted files."""
+        for path in self.files():
+            stream = Stream(path)
+            digest = self.computehash(stream)
+            extension = os.path.splitext(path)[1] if use_extension else None
+            expected_path = self.filepath(digest, extension)
+
+            if expected_path != path:
+                yield (path, Address(expected_path, digest))
+
 
 class Stream(object):
     """Common interface for file-like objects.

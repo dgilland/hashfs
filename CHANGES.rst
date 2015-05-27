@@ -3,6 +3,7 @@ Changelog
 
 
 - Add ``HashFS.get`` for retrieving a reader object given a file digest or path.
+- Add ``HashFS.repair`` which reindexes any files under root directory whose file path doesn't not match its tokenized file digest.
 
 
 v0.0.1 (2015-05-27)

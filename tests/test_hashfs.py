@@ -123,3 +123,17 @@ def test_hashfs_get(testpath, stringio, extension, address_attr):
     assert fileobj.read() == stringio.getvalue()
 
     fileobj.close()
+
+
+def test_hashfs_repair(testpath, testfile):
+    testfile.write('qux')
+    fs = hashfs.HashFS(str(testpath))
+
+    assert os.path.isfile(str(testfile))
+
+    repaired = fs.repair()
+    original_path, address = repaired[0]
+
+    assert original_path == str(testfile)
+    assert not os.path.isfile(original_path)
+    assert_file_put(testpath, fs, address)
