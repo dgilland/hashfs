@@ -124,7 +124,11 @@ def test_hashfs_get(fs, stringio, extension, address_attr):
     fileobj.close()
 
 
-def test_hashfs_repair(testpath, testfile):
+def test_hashfs_get_invalid(fs):
+    with pytest.raises(IOError):
+        fs.get('invalid')
+
+
 @pytest.mark.parametrize('address_attr', [
    'digest',
    'path',
