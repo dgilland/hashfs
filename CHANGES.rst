@@ -10,7 +10,10 @@ vx.x.x (xxxx-xx-xx)
 - Add ``HashFS.folders()`` method that returns the folder paths that directly contain files (i.e. subpaths that only contain folders are ignored).
 - Add ``HashFS.detokenize()`` method that returns the file digest contained in a file path.
 - Add ``HashFS.repair()`` method that reindexes any files under root directory whose file path doesn't not match its tokenized file digest.
-- Rename ``Address.digest`` to ``Address.id``. (**breaking change**)
+- Rename ``Address`` classs to ``HashAddress``. (**breaking change**)
+- Rename ``HashAddress.digest`` to ``HashAddress.id``. (**breaking change**)
+- Rename ``HashAddress.path`` to ``HashAddress.abspath``. (**breaking change**)
+- Add ``HashAddress.relpath`` which represents path relative to ``HashFS.root``.
 
 
 v0.0.1 (2015-05-27)

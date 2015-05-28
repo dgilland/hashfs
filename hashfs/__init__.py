@@ -12,7 +12,7 @@ from .__meta__ import (
     __license__
 )
 
-from .hashfs import HashFS
+from .hashfs import HashFS, HashAddress
 
 
-__all__ = ['HashFS']
+__all__ = ('HashFS', 'HashAddress')

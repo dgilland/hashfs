@@ -49,19 +49,21 @@ def fs(testpath):
 
 
 def put_range(fs, count):
-    return dict((addr.path, addr)
-                for addr in (fs.put(StringIO(u'{0}'.format(i)))
-                             for i in range(count)))
+    return dict((address.abspath, address)
+                for address in (fs.put(StringIO(u'{0}'.format(i)))
+                                for i in range(count)))
 
 
 def assert_file_put(fs, address):
-    path = address.path[len(fs.root):]
-    directory = os.path.dirname(path)
+    directory = os.path.dirname(address.relpath)
     dir_parts = [part for part in directory.split(os.path.sep) if part]
 
-    assert address.path in tuple(py.path.local(fs.root).visit())
+    assert address.abspath in tuple(py.path.local(fs.root).visit())
     assert fs.exists(address.id)
-    assert os.path.splitext(path.replace(os.path.sep, ''))[0] == address.id
+
+    id = os.path.splitext(address.relpath.replace(os.path.sep, ''))[0]
+    assert id == address.id
+
     assert len(dir_parts) == fs.depth
     assert all(len(part) == fs.length for part in dir_parts)
 
@@ -71,7 +73,7 @@ def test_hashfs_put_stringio(fs, stringio):
 
     assert_file_put(fs, address)
 
-    with open(address.path, 'rb') as fileobj:
+    with open(address.abspath, 'rb') as fileobj:
         assert fileobj.read() == to_bytes(stringio.getvalue())
 
 
@@ -80,7 +82,7 @@ def test_hashfs_put_fileobj(fs, fileio):
 
     assert_file_put(fs, address)
 
-    with open(address.path, 'rb') as fileobj:
+    with open(address.abspath, 'rb') as fileobj:
         assert fileobj.read() == fileio.read()
 
 
@@ -89,7 +91,7 @@ def test_hashfs_put_file(fs, filepath):
 
     assert_file_put(fs, address)
 
-    with open(address.path, 'rb') as fileobj:
+    with open(address.abspath, 'rb') as fileobj:
         assert fileobj.read() == to_bytes(filepath.read())
 
 
@@ -103,8 +105,8 @@ def test_hashfs_put_extension(fs, stringio, extension):
     address = fs.put(stringio, extension)
 
     assert_file_put(fs, address)
-    assert os.path.sep in address.path
-    assert os.path.splitext(address.path)[1].endswith(extension)
+    assert os.path.sep in address.abspath
+    assert os.path.splitext(address.abspath)[1].endswith(extension)
 
 
 def test_hashfs_put_error(fs):
@@ -116,9 +118,9 @@ def test_hashfs_put_error(fs):
     ('', 'id'),
     ('.txt', 'id'),
     ('txt', 'id'),
-    ('', 'path'),
-    ('.txt', 'path'),
-    ('txt', 'path'),
+    ('', 'abspath'),
+    ('.txt', 'abspath'),
+    ('txt', 'abspath'),
 ])
 def test_hashfs_get(fs, stringio, extension, address_attr):
     address = fs.put(stringio, extension)
@@ -138,7 +140,7 @@ def test_hashfs_get_error(fs):
 
 @pytest.mark.parametrize('address_attr', [
    'id',
-   'path',
+   'abspath',
 ])
 def test_hashfs_delete(fs, stringio, address_attr):
     address = fs.put(stringio)
@@ -184,7 +186,7 @@ def test_hashfs_remove_empty_subdir(fs):
 
 def test_hashfs_detokenize(fs, stringio):
     address = fs.put(stringio)
-    assert fs.detokenize(address.path) == address.id
+    assert fs.detokenize(address.abspath) == address.id
 
 
 def test_hashfs_detokenize_error(fs):
@@ -215,7 +217,7 @@ def test_hashfs_files(fs):
     for file_ in files:
         assert os.path.isfile(file_)
         assert file_ in addresses
-        assert addresses[file_].path == file_
+        assert addresses[file_].abspath == file_
         assert addresses[file_].id == fs.detokenize(file_)
 
 

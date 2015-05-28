@@ -58,7 +58,21 @@ class HashFS(object):
             id = self.computehash(stream)
             filepath = self.copy(stream, id, extension)
 
-        return Address(id, filepath)
+        return HashAddress(id, self.relpath(filepath), filepath)
+
+    def copy(self, stream, id, extension=None):
+        """Copy the contents of `stream` onto disk with an optional file
+        extension appended. The copy process uses a temporary file to store the
+        initial contents and then moves this file to it's final location.
+        """
+        filepath = self.filepath(id, extension)
+
+        if not os.path.isfile(filepath):
+            with tmpfile(stream, self.fmode) as fname:
+                self.makepath(os.path.dirname(filepath))
+                shutil.copy(fname, filepath)
+
+        return filepath
 
     def get(self, id_or_path, mode='rb'):
         """Return fileobj from given id or path."""
@@ -128,19 +142,9 @@ class HashFS(object):
         """Physically create the folder path on disk."""
         mkpath(path, mode=self.dmode)
 
-    def copy(self, stream, id, extension=None):
-        """Copy the contents of `stream` onto disk with an optional file
-        extension appended. The copy process using a temporary file to store
-        the initial contents and then moves this file to it's final location.
-        """
-        filepath = self.filepath(id, extension)
-
-        if not os.path.isfile(filepath):
-            with tmpfile(stream, self.fmode) as fname:
-                self.makepath(os.path.dirname(filepath))
-                shutil.copy(fname, filepath)
-
-        return filepath
+    def relpath(self, path):
+        """Return `path` relative to the :attr:`root` directory."""
+        return os.path.relpath(path, self.root)
 
     def realpath(self, id_or_path):
         """Attempt to determine the real path of a file id or path through
@@ -202,9 +206,7 @@ class HashFS(object):
                               'a subdirectory of the root directory "{1}"'
                               .format(path, self.root)))
 
-        path = os.path.realpath(path).split(self.root)[1]
-
-        return os.path.splitext(path)[0].replace(os.sep, '')
+        return os.path.splitext(self.relpath(path))[0].replace(os.sep, '')
 
     def repair(self, use_extension=True):
         """Repair any file locations whose content address doesn't match it's
@@ -216,15 +218,15 @@ class HashFS(object):
 
         try:
             for path, address in corrupted:
-                if os.path.isfile(address.path):
+                if os.path.isfile(address.abspath):
                     # File already exists so just delete corrupted path.
                     os.remove(path)
                 else:
                     # File doesn't exists so move it.
-                    self.makepath(os.path.dirname(address.path))
-                    shutil.move(path, address.path)
+                    self.makepath(os.path.dirname(address.abspath))
+                    shutil.move(path, address.abspath)
 
-                os.chmod(address.path, self.fmode)
+                os.chmod(address.abspath, self.fmode)
                 repaired.append((path, address))
         finally:
             os.umask(oldmask)
@@ -243,11 +245,19 @@ class HashFS(object):
             expected_path = self.filepath(id, extension)
 
             if expected_path != path:
-                yield (path, Address(id, expected_path))
+                yield (path, HashAddress(id,
+                                         self.relpath(expected_path),
+                                         expected_path))
 
 
-class Address(namedtuple('Address', ['id', 'path'])):
-    """File Address containing file's path on disk and it's content hash."""
+class HashAddress(namedtuple('HashAddress', ['id', 'relpath', 'abspath'])):
+    """File Address containing file's path on disk and it's content hash ID.
+
+    Attributes:
+        id (str): Hash ID (hexdigest) of file contents.
+        relpath (str): Relative path location to :attr:`HashFS.root`.
+        abspath (str): Absoluate path location of file on disk.
+    """
     pass
 
 
