@@ -7,7 +7,11 @@ HashFS
 
 HashFS is a content-addressable file management system. What does that mean? Simply, that HashFS manages a directory where files are saved based on the file's hash.
 
-Typical use cases for this kind of system are ones where files are written once and never change (e.g. image storage), having no duplicate files is desirable (e.g. user uploads), and/or file metadata is stored elsewhere (e.g. in a database).
+Typical use cases for this kind of system are ones where:
+
+- Files are written once and never change (e.g. image storage).
+- It's desirable to have no duplicate files (e.g. user uploads).
+- File metadata is stored elsewhere (e.g. in a database).
 
 
 Links
@@ -54,7 +58,7 @@ Designate a root folder for ``HashFS``. If the folder doesn't already exist, it 
     # temp_hashfs/ab/cd/ef/ghijklmnopqrstuvwxyz
 
 
-**NOTE:** The ``algorithm`` should be a valid string argument for ``hashlib.new()``.
+**NOTE:** The ``algorithm`` value should be a valid string argument to ``hashlib.new()``.
 
 
 Storing Content
@@ -113,7 +117,8 @@ Delete a file by address ID or path.
 .. code-block:: python
 
     fs.delete(address.id)
-    fs.delete(address.path)
+    fs.delete(address.abspath)
+    fs.delete(address.relpath)
 
 
 **NOTE:** When a file is deleted, any parent directories above the file will also be deleted if they are empty directories.
@@ -129,7 +134,7 @@ The ``HashFS`` files may not always be in sync with it's ``depth``, ``length``, 
 
     repaired = fs.repair()
 
-    # Or if you want to drop extensions...
+    # Or if you want to drop file extensions...
     repaired = fs.repair(extensions=False)
 
 

@@ -52,7 +52,7 @@ class HashFS(object):
         self.makepath(self.root)
 
     def put(self, file, extension=None):
-        """Store contents of `obj` on disk using its content hash for the
+        """Store contents of `file` on disk using its content hash for the
         address.
 
         Args:
@@ -264,7 +264,10 @@ class HashFS(object):
         return repaired
 
     def corrupted(self, extensions=True):
-        """Return generator that yields corrupted files."""
+        """Return generator that yields corrupted files as ``(path, address)``
+        where ``path`` is the path of the corrupted file and ``address`` is
+        the :class:`HashAddress` of the expected location.
+        """
         for path in self.files():
             stream = Stream(path)
 

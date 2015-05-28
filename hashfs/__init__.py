@@ -3,10 +3,11 @@
 Simply, that HashFS manages a directory where files are saved based on the
 file's hash.
 
-Typical use cases for this kind of system are ones where files are written once
-and never change (e.g. image storage), having no duplicate files is desirable
-(e.g. user uploads), and/or file metadata is stored elsewhere (e.g. in a
-database).
+Typical use cases for this kind of system are ones where:
+
+- Files are written once and never change (e.g. image storage).
+- It's desirable to have no duplicate files (e.g. user uploads).
+- File metadata is stored elsewhere (e.g. in a database).
 """
 
 from .__meta__ import (
