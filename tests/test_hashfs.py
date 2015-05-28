@@ -210,17 +210,33 @@ def test_hashfs_detokenize_error(fs):
         fs.detokenize('invalid')
 
 
-def test_hashfs_repair(fs, testfile):
-    testfile.write('qux')
+def test_hashfs_repair(fs, stringio):
+    original_address = fs.put(stringio)
+    newfs = hashfs.HashFS(fs.root, depth=1)
 
-    assert os.path.isfile(str(testfile))
+    repaired = newfs.repair()
 
-    repaired = fs.repair()
+    assert len(repaired) == 1
     original_path, address = repaired[0]
 
-    assert original_path == str(testfile)
+    assert original_path == original_address.abspath
     assert not os.path.isfile(original_path)
-    assert_file_put(fs, address)
+    assert_file_put(newfs, address)
+
+
+def test_hashfs_repair_duplicates(fs, stringio):
+    original_address = fs.put(stringio)
+    newfs = hashfs.HashFS(fs.root, depth=1)
+    newfs.put(stringio)
+
+    repaired = newfs.repair()
+
+    assert len(repaired) == 1
+    original_path, address = repaired[0]
+
+    assert original_path == original_address.abspath
+    assert not os.path.isfile(original_path)
+    assert_file_put(newfs, address)
 
 
 def test_hashfs_files(fs):
