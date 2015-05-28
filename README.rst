@@ -5,7 +5,9 @@ HashFS
 |version| |travis| |coveralls| |license|
 
 
-A content-addressable file management system.
+HashFS is a content-addressable file management system. What does that mean? Simply, that HashFS manages a directory where files are saved based on the file's hash.
+
+Typical use cases for this kind of system are ones where files are written once and never change (e.g. image storage), having no duplicate files is desirable (e.g. user uploads), and/or file metadata is stored elsewhere (e.g. in a database).
 
 
 Links
@@ -27,6 +29,79 @@ Install using pip:
 
     pip install hashfs
 
+
+.. code-block:: python
+
+    from hashfs import HashFS
+
+
+Designate a root folder for ``HashFS``. If the folder doesn't already exist, it will be created.
+
+
+.. code-block:: python
+
+    # Set the `depth` to the number of subfolders the file's hash should be split when saving.
+    # Set the `length` to the desired length of each subfolder.
+    fs = HashFS('temp_hashfs', depth=4, length=1, algorithm='sha256')
+
+    # With depth=4 and length=1, files will be saved in the following pattern:
+    # temp_hashfs/a/b/c/d/efghijklmnopqrstuvwxyz
+
+    # With depth=3 and length=2, files will be saved in the following pattern:
+    # temp_hashfs/ab/cd/ef/ghijklmnopqrstuvwxyz
+
+
+**NOTE:** The ``algorithm`` should be a valid string argument for ``hashlib.new()``.
+
+
+Add content to the folder using either readable objects (e.g. ``StringIO``) or file paths (e.g. ``'a/path/to/some/file'``).
+
+
+.. code-block:: python
+
+    from io import StringIO
+
+    some_content = StringIO('some content')
+
+    address = fs.put(some_content)
+
+    # Or if you'd like to save the file with an extension...
+    address = fs.put(some_content, '.txt')
+
+    # The id of the file (i.e. the hexdigest of its contents).
+    address.id
+
+    # The absolute path where the file was saved.
+    address.abspath
+
+    # The path relative to fs.root.
+    address.relpath
+
+
+Get a ``BufferedReader`` handler for an existing file by address ID or path.
+
+
+.. code-block:: python
+
+    fileio = fs.get(address.id)
+
+    # Or using the full path...
+    fileio = fs.get(address.path)
+
+
+**NOTE:** When getting a file that was saved with an extension, it's not necessary to supply the extension. Extensions are ignored when looking for a file based on the ID or path.
+
+
+Delete a file by address ID or path.
+
+
+.. code-block:: python
+
+    fs.delete(address.id)
+    fs.delete(address.path)
+
+
+**NOTE:** When a file is deleted, any parent directories above the file will also be deleted if they are empty directories.
 
 
 For more details, please see the full documentation at http://hashfs.readthedocs.org.

@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
-"""The hashfs library is a content addressable file management system.
+"""HashFS is a content-addressable file management system. What does that mean?
+Simply, that HashFS manages a directory where files are saved based on the
+file's hash.
+
+Typical use cases for this kind of system are ones where files are written once
+and never change (e.g. image storage), having no duplicate files is desirable
+(e.g. user uploads), and/or file metadata is stored elsewhere (e.g. in a
+database).
 """
 
 from .__meta__ import (

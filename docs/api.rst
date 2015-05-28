@@ -9,3 +9,4 @@ API Reference
 
 
 .. automodule:: hashfs
+    :members:

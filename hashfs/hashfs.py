@@ -1,3 +1,5 @@
+"""Module for HashFS class.
+"""
 
 from collections import namedtuple
 from contextlib import contextmanager, closing
@@ -16,7 +18,7 @@ from ._compat import to_bytes
 class HashFS(object):
     """Content addressable file manager.
 
-    Args:
+    Attributes:
         root (str): Directory path used as root of storage space.
         depth (int, optional): Number of folders to create when saving a file.
             Defaults to ``4``.
@@ -46,13 +48,22 @@ class HashFS(object):
         self.length = length
         self.algorithm = algorithm
 
+        # Ensure root directory exists.
         self.makepath(self.root)
 
-    def put(self, obj, extension=None):
+    def put(self, io_or_path, extension=None):
         """Store contents of `obj` on disk using its content hash for the
         address.
+
+        Args:
+            io_or_path (mixed): Readable object or path to file.
+            extension (str, optional): Optional extension to append to file
+                when saving.
+
+        Returns:
+            Address: File's address.
         """
-        stream = Stream(obj)
+        stream = Stream(io_or_path)
 
         with closing(stream):
             id = self.computehash(stream)
@@ -75,7 +86,18 @@ class HashFS(object):
         return filepath
 
     def get(self, id_or_path, mode='rb'):
-        """Return fileobj from given id or path."""
+        """Return fileobj from given id or path.
+
+        Args:
+            id_or_path (str): Address ID or path of file.
+            mode (str, optional): Mode to open file in. Defaults to ``'rb'``.
+
+        Returns:
+            Buffer: An ``io`` buffer dependent on the `mode`.
+
+        Raises:
+            IOError: If file doesn't exist.
+        """
         realpath = self.realpath(id_or_path)
         if realpath is None:
             raise IOError('Could not locate file: {0}'.format(id_or_path))
@@ -84,7 +106,10 @@ class HashFS(object):
 
     def delete(self, id_or_path):
         """Delete file using id or path. Remove any empty directories after
-        deleting.
+        deleting. No exception is raised if file doesn't exist.
+
+        Args:
+            id_or_path (str): Address ID or path of file.
         """
         realpath = self.realpath(id_or_path)
         if realpath is None:
@@ -129,7 +154,7 @@ class HashFS(object):
                 yield folder
 
     def exists(self, id_or_path):
-        """Check whether a given file id exsists on disk."""
+        """Check whether a given file id or path exsists on disk."""
         return bool(self.realpath(id_or_path))
 
     def haspath(self, path):
