@@ -177,16 +177,21 @@ class HashFS(object):
         an extension, the path is considered a match if the basename matches
         the expected file path of the id.
         """
-        # Check for direct match.
+        # Check for absoluate path.
         if os.path.isfile(id_or_path):
             return id_or_path
 
-        # Check if tokenized id matches.
+        # Check for relative path.
+        relpath = os.path.join(self.root, id_or_path)
+        if os.path.isfile(relpath):
+            return relpath
+
+        # Check for tokenized path.
         filepath = self.filepath(id_or_path)
         if os.path.isfile(filepath):
             return filepath
 
-        # Check if tokenized id with any extension matches.
+        # Check for tokenized path with any extension.
         paths = glob.glob('{0}.*'.format(filepath))
         if paths:
             return paths[0]

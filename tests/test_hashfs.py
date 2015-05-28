@@ -114,6 +114,14 @@ def test_hashfs_put_error(fs):
         fs.put('foo')
 
 
+def test_hashfs_address(fs, stringio):
+    address = fs.put(stringio)
+
+    assert fs.root not in address.relpath
+    assert os.path.join(fs.root, address.relpath) == address.abspath
+    assert address.relpath.replace(os.sep, '') == address.id
+
+
 @pytest.mark.parametrize('extension,address_attr', [
     ('', 'id'),
     ('.txt', 'id'),
@@ -136,6 +144,14 @@ def test_hashfs_get(fs, stringio, extension, address_attr):
 def test_hashfs_get_error(fs):
     with pytest.raises(IOError):
         fs.get('invalid')
+
+
+def test_hashfs_exists(fs, stringio):
+    address = fs.put(stringio)
+
+    assert fs.exists(address.id)
+    assert fs.exists(address.relpath)
+    assert fs.exists(address.abspath)
 
 
 @pytest.mark.parametrize('address_attr', [
