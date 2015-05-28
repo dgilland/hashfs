@@ -30,6 +30,9 @@ Install using pip:
     pip install hashfs
 
 
+Initialization
+--------------
+
 .. code-block:: python
 
     from hashfs import HashFS
@@ -53,6 +56,9 @@ Designate a root folder for ``HashFS``. If the folder doesn't already exist, it 
 
 **NOTE:** The ``algorithm`` should be a valid string argument for ``hashlib.new()``.
 
+
+Storing Content
+---------------
 
 Add content to the folder using either readable objects (e.g. ``StringIO``) or file paths (e.g. ``'a/path/to/some/file'``).
 
@@ -78,6 +84,9 @@ Add content to the folder using either readable objects (e.g. ``StringIO``) or f
     address.relpath
 
 
+Retrieving Content
+------------------
+
 Get a ``BufferedReader`` handler for an existing file by address ID or path.
 
 
@@ -86,11 +95,17 @@ Get a ``BufferedReader`` handler for an existing file by address ID or path.
     fileio = fs.get(address.id)
 
     # Or using the full path...
-    fileio = fs.get(address.path)
+    fileio = fs.get(address.abspath)
+
+    # Or using a path relative to fs.root
+    fileio = fs.get(address.relpath)
 
 
 **NOTE:** When getting a file that was saved with an extension, it's not necessary to supply the extension. Extensions are ignored when looking for a file based on the ID or path.
 
+
+Removing Content
+----------------
 
 Delete a file by address ID or path.
 
@@ -102,6 +117,23 @@ Delete a file by address ID or path.
 
 
 **NOTE:** When a file is deleted, any parent directories above the file will also be deleted if they are empty directories.
+
+
+Repairing Content
+-----------------
+
+The ``HashFS`` files may not always be in sync with it's ``depth``, ``length``, or ``algorithm`` settings (e.g. if ``HashFS`` takes ownership of a directory that wasn't previously stored using content hashes or if the ``HashFS`` settings change). These files can be easily reindexed using ``repair()``.
+
+
+.. code-block:: python
+
+    repaired = fs.repair()
+
+    # Or if you want to drop extensions...
+    repaired = fs.repair(extensions=False)
+
+
+**WARNING:** It's recommended that a backup of the directory be made before reparing just in case something goes wrong.
 
 
 For more details, please see the full documentation at http://hashfs.readthedocs.org.
