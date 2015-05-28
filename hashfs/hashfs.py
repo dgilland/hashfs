@@ -238,7 +238,7 @@ class HashFS(object):
 
         return os.path.splitext(self.relpath(path))[0].replace(os.sep, '')
 
-    def repair(self, use_extension=True):
+    def repair(self, extensions=True):
         """Repair any file locations whose content address doesn't match it's
         file path.
         """
@@ -263,7 +263,7 @@ class HashFS(object):
 
         return repaired
 
-    def corrupted(self, use_extension=True):
+    def corrupted(self, extensions=True):
         """Return generator that yields corrupted files."""
         for path in self.files():
             stream = Stream(path)
@@ -271,7 +271,7 @@ class HashFS(object):
             with closing(stream):
                 id = self.computehash(stream)
 
-            extension = os.path.splitext(path)[1] if use_extension else None
+            extension = os.path.splitext(path)[1] if extensions else None
             expected_path = self.filepath(id, extension)
 
             if expected_path != path:
