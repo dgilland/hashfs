@@ -51,19 +51,19 @@ class HashFS(object):
         # Ensure root directory exists.
         self.makepath(self.root)
 
-    def put(self, io_or_path, extension=None):
+    def put(self, file, extension=None):
         """Store contents of `obj` on disk using its content hash for the
         address.
 
         Args:
-            io_or_path (mixed): Readable object or path to file.
+            file (mixed): Readable object or path to file.
             extension (str, optional): Optional extension to append to file
                 when saving.
 
         Returns:
             Address: File's address.
         """
-        stream = Stream(io_or_path)
+        stream = Stream(file)
 
         with closing(stream):
             id = self.computehash(stream)
@@ -85,11 +85,11 @@ class HashFS(object):
 
         return filepath
 
-    def get(self, id_or_path, mode='rb'):
+    def get(self, file, mode='rb'):
         """Return fileobj from given id or path.
 
         Args:
-            id_or_path (str): Address ID or path of file.
+            file (str): Address ID or path of file.
             mode (str, optional): Mode to open file in. Defaults to ``'rb'``.
 
         Returns:
@@ -98,20 +98,20 @@ class HashFS(object):
         Raises:
             IOError: If file doesn't exist.
         """
-        realpath = self.realpath(id_or_path)
+        realpath = self.realpath(file)
         if realpath is None:
-            raise IOError('Could not locate file: {0}'.format(id_or_path))
+            raise IOError('Could not locate file: {0}'.format(file))
 
         return io.open(realpath, mode)
 
-    def delete(self, id_or_path):
+    def delete(self, file):
         """Delete file using id or path. Remove any empty directories after
         deleting. No exception is raised if file doesn't exist.
 
         Args:
-            id_or_path (str): Address ID or path of file.
+            file (str): Address ID or path of file.
         """
-        realpath = self.realpath(id_or_path)
+        realpath = self.realpath(file)
         if realpath is None:
             return
 
@@ -142,8 +142,8 @@ class HashFS(object):
         """Return generator that yields all files under :attr:`root` directory.
         """
         for folder, subfolders, files in os.walk(self.root):
-            for file_ in files:
-                yield os.path.abspath(os.path.join(folder, file_))
+            for file in files:
+                yield os.path.abspath(os.path.join(folder, file))
 
     def folders(self):
         """Return generator that yields all folders under :attr:`root`
@@ -153,9 +153,9 @@ class HashFS(object):
             if files:
                 yield folder
 
-    def exists(self, id_or_path):
+    def exists(self, file):
         """Check whether a given file id or path exsists on disk."""
-        return bool(self.realpath(id_or_path))
+        return bool(self.realpath(file))
 
     def haspath(self, path):
         """Return whether `path` is a subdirectory of the :attr:`root`
@@ -171,23 +171,23 @@ class HashFS(object):
         """Return `path` relative to the :attr:`root` directory."""
         return os.path.relpath(path, self.root)
 
-    def realpath(self, id_or_path):
+    def realpath(self, file):
         """Attempt to determine the real path of a file id or path through
         successive checking of candidate paths. If the real path is stored with
         an extension, the path is considered a match if the basename matches
         the expected file path of the id.
         """
         # Check for absoluate path.
-        if os.path.isfile(id_or_path):
-            return id_or_path
+        if os.path.isfile(file):
+            return file
 
         # Check for relative path.
-        relpath = os.path.join(self.root, id_or_path)
+        relpath = os.path.join(self.root, file)
         if os.path.isfile(relpath):
             return relpath
 
         # Check for tokenized path.
-        filepath = self.filepath(id_or_path)
+        filepath = self.filepath(file)
         if os.path.isfile(filepath):
             return filepath
 
