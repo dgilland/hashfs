@@ -85,8 +85,9 @@ class HashFS(object):
 
         return filepath
 
-    def get(self, file, mode='rb'):
-        """Return fileobj from given id or path.
+        """Return :class:`HashAdress` from given id or path. If `file` does not
+    def open(self, file, mode='rb'):
+        """Return open buffer object from given id or path.
 
         Args:
             file (str): Address ID or path of file.

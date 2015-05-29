@@ -130,10 +130,10 @@ def test_hashfs_address(fs, stringio):
     ('.txt', 'abspath'),
     ('txt', 'abspath'),
 ])
-def test_hashfs_get(fs, stringio, extension, address_attr):
+def test_hashfs_open(fs, stringio, extension, address_attr):
     address = fs.put(stringio, extension)
 
-    fileobj = fs.get(getattr(address, address_attr))
+    fileobj = fs.open(getattr(address, address_attr))
 
     assert isinstance(fileobj, BufferedReader)
     assert fileobj.read() == to_bytes(stringio.getvalue())
@@ -141,9 +141,9 @@ def test_hashfs_get(fs, stringio, extension, address_attr):
     fileobj.close()
 
 
-def test_hashfs_get_error(fs):
+def test_hashfs_open_error(fs):
     with pytest.raises(IOError):
-        fs.get('invalid')
+        fs.open('invalid')
 
 
 def test_hashfs_exists(fs, stringio):

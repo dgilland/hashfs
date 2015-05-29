@@ -96,13 +96,13 @@ Get a ``BufferedReader`` handler for an existing file by address ID or path.
 
 .. code-block:: python
 
-    fileio = fs.get(address.id)
+    fileio = fs.open(address.id)
 
     # Or using the full path...
-    fileio = fs.get(address.abspath)
+    fileio = fs.open(address.abspath)
 
     # Or using a path relative to fs.root
-    fileio = fs.get(address.relpath)
+    fileio = fs.open(address.relpath)
 
 
 **NOTE:** When getting a file that was saved with an extension, it's not necessary to supply the extension. Extensions are ignored when looking for a file based on the ID or path.
