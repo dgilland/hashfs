@@ -76,8 +76,9 @@ class HashFS(object):
         extension appended. The copy process uses a temporary file to store the
         initial contents and then moves this file to it's final location.
         """
-        filepath = self.filepath(id, extension)
+        filepath = self.idpath(id, extension)
 
+        # Only copy file if it doesn't already exist.
         if not os.path.isfile(filepath):
             with tmpfile(stream, self.fmode) as fname:
                 self.makepath(os.path.dirname(filepath))
@@ -188,7 +189,7 @@ class HashFS(object):
             return relpath
 
         # Check for tokenized path.
-        filepath = self.filepath(file)
+        filepath = self.idpath(file)
         if os.path.isfile(filepath):
             return filepath
 
@@ -200,7 +201,7 @@ class HashFS(object):
         # Could not determine a match.
         return None
 
-    def filepath(self, id, extension=''):
+    def idpath(self, id, extension=''):
         """Build the file path for a given hash id. Optionally, append a
         file extension.
         """
@@ -276,7 +277,7 @@ class HashFS(object):
                 id = self.computehash(stream)
 
             extension = os.path.splitext(path)[1] if extensions else None
-            expected_path = self.filepath(id, extension)
+            expected_path = self.idpath(id, extension)
 
             if expected_path != path:
                 yield (path, HashAddress(id,
