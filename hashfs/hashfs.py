@@ -61,7 +61,7 @@ class HashFS(object):
                 when saving.
 
         Returns:
-            Address: File's address.
+            HashAddress: File's hash address.
         """
         stream = Stream(file)
 
@@ -86,7 +86,25 @@ class HashFS(object):
 
         return filepath
 
+    def get(self, file):
         """Return :class:`HashAdress` from given id or path. If `file` does not
+        refer to a valid file, then ``None`` is returned.
+
+        Args:
+            file (str): Address ID or path of file.
+
+        Returns:
+            HashAddress: File's hash address.
+        """
+        realpath = self.realpath(file)
+
+        if realpath is None:
+            return None
+        else:
+            return HashAddress(self.detokenize(realpath),
+                               self.relpath(realpath),
+                               realpath)
+
     def open(self, file, mode='rb'):
         """Return open buffer object from given id or path.
 

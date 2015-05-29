@@ -154,6 +154,15 @@ def test_hashfs_exists(fs, stringio):
     assert fs.exists(address.abspath)
 
 
+def test_hashfs_get(fs, stringio):
+    address = fs.put(stringio)
+
+    assert fs.get(address.id) == address
+    assert fs.get(address.relpath) == address
+    assert fs.get(address.abspath) == address
+    assert fs.get('invalid') is None
+
+
 @pytest.mark.parametrize('address_attr', [
    'id',
    'abspath',

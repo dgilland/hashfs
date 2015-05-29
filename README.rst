@@ -88,6 +88,19 @@ Add content to the folder using either readable objects (e.g. ``StringIO``) or f
     address.relpath
 
 
+Retrieving File Address
+-----------------------
+
+Get a file's ``HashAddress`` by address ID or path. This address would be identical to the address returned by ``put()``.
+
+.. code-block:: python
+
+    assert fs.get(address.id) == address
+    assert fs.get(address.relpath) == address
+    assert fs.get(address.abspath) == address
+    assert fs.get('invalid') is None
+
+
 Retrieving Content
 ------------------
 
