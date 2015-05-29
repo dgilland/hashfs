@@ -55,7 +55,7 @@ setup(
     tests_require=meta['__tests_require__'],
     cmdclass={'test': Tox},
     test_suite='tests',
-    keywords='hashfs',
+    keywords='hashfs hash file system content addressable fixed storage',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
