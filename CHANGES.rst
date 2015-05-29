@@ -2,7 +2,7 @@ Changelog
 =========
 
 
-vx.x.x (xxxx-xx-xx)
+v0.2.0 (2015-05-29)
 -------------------
 
 - Rename ``HashFS.get`` to ``HashFS.open``. (**breaking change**)
