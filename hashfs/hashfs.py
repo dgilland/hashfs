@@ -11,7 +11,7 @@ import os
 import shutil
 from tempfile import NamedTemporaryFile
 
-from .utils import compact, issubdir
+from .utils import issubdir, shard
 from ._compat import to_bytes
 
 
@@ -20,10 +20,10 @@ class HashFS(object):
 
     Attributes:
         root (str): Directory path used as root of storage space.
-        depth (int, optional): Number of folders to create when saving a file.
-            Defaults to ``4``.
-        length (int): Number of characters each subfolder will contain.
-            Defaults to ``1``.
+        depth (int, optional): Depth of subfolders to create when saving a
+            file.
+        width (int, optional): Width of each subfolder to create when saving a
+            file.
         algorithm (str): Hash algorithm to use when computing file hash.
             Algorithm should be available in ``hashlib`` module. Defaults to
             ``'sha256'``.
@@ -37,7 +37,7 @@ class HashFS(object):
     def __init__(self,
                  root,
                  depth=4,
-                 length=1,
+                 width=1,
                  algorithm='sha256',
                  fmode=0o664,
                  dmode=0o755):
@@ -45,7 +45,7 @@ class HashFS(object):
         self.fmode = fmode
         self.dmode = dmode
         self.depth = depth
-        self.length = length
+        self.width = width
         self.algorithm = algorithm
 
         # Ensure root directory exists.
@@ -101,7 +101,7 @@ class HashFS(object):
         if realpath is None:
             return None
         else:
-            return HashAddress(self.detokenize(realpath),
+            return HashAddress(self.unshard(realpath),
                                self.relpath(realpath),
                                realpath)
 
@@ -206,12 +206,12 @@ class HashFS(object):
         if os.path.isfile(relpath):
             return relpath
 
-        # Check for tokenized path.
+        # Check for sharded path.
         filepath = self.idpath(file)
         if os.path.isfile(filepath):
             return filepath
 
-        # Check for tokenized path with any extension.
+        # Check for sharded path with any extension.
         paths = glob.glob('{0}.*'.format(filepath))
         if paths:
             return paths[0]
@@ -223,7 +223,7 @@ class HashFS(object):
         """Build the file path for a given hash id. Optionally, append a
         file extension.
         """
-        paths = self.tokenize(id)
+        paths = self.shard(id)
 
         if extension and not extension.startswith(os.extsep):
             extension = os.extsep + extension
@@ -239,20 +239,14 @@ class HashFS(object):
             hashobj.update(to_bytes(data))
         return hashobj.hexdigest()
 
-    def tokenize(self, id):
-        """Convert content ID into tokens that will become the folder tree
-        structure.
-        """
-        # This creates a list of `depth` number of tokens with length
-        # `length` from the first part of the id plus the remainder.
-        return compact([id[i * self.length:self.length * (i + 1)]
-                        for i in range(self.depth)] +
-                       [id[self.depth * self.length:]])
+    def shard(self, id):
+        """Shard content ID into subfolders."""
+        return shard(id, self.depth, self.width)
 
-    def detokenize(self, path):
-        """Return tokenized path's hash value."""
+    def unshard(self, path):
+        """Unshard path to determine hash value."""
         if not self.haspath(path):
-            raise ValueError(('Cannot detokenize path. The path "{0}" is not '
+            raise ValueError(('Cannot unshard path. The path "{0}" is not '
                               'a subdirectory of the root directory "{1}"'
                               .format(path, self.root)))
 
@@ -304,7 +298,7 @@ class HashFS(object):
 
 
 class HashAddress(namedtuple('HashAddress', ['id', 'relpath', 'abspath'])):
-    """File Address containing file's path on disk and it's content hash ID.
+    """File address containing file's path on disk and it's content hash ID.
 
     Attributes:
         id (str): Hash ID (hexdigest) of file contents.

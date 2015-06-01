@@ -2,6 +2,12 @@ Changelog
 =========
 
 
+v0.3.0 (2015-06-02)
+-------------------
+
+- Rename ``HashFS.length`` parameter/property to ``width``. (**breaking change**)
+
+
 v0.2.0 (2015-05-29)
 -------------------
 

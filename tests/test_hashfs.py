@@ -65,7 +65,7 @@ def assert_file_put(fs, address):
     assert id == address.id
 
     assert len(dir_parts) == fs.depth
-    assert all(len(part) == fs.length for part in dir_parts)
+    assert all(len(part) == fs.width for part in dir_parts)
 
 
 def test_hashfs_put_stringio(fs, stringio):
@@ -209,14 +209,14 @@ def test_hashfs_remove_empty_subdir(fs):
     assert os.path.exists(fs.root)
 
 
-def test_hashfs_detokenize(fs, stringio):
+def test_hashfs_unshard(fs, stringio):
     address = fs.put(stringio)
-    assert fs.detokenize(address.abspath) == address.id
+    assert fs.unshard(address.abspath) == address.id
 
 
-def test_hashfs_detokenize_error(fs):
+def test_hashfs_unshard_error(fs):
     with pytest.raises(ValueError):
-        fs.detokenize('invalid')
+        fs.unshard('invalid')
 
 
 def test_hashfs_repair(fs, stringio):
@@ -259,7 +259,7 @@ def test_hashfs_files(fs):
         assert os.path.isfile(file_)
         assert file_ in addresses
         assert addresses[file_].abspath == file_
-        assert addresses[file_].id == fs.detokenize(file_)
+        assert addresses[file_].id == fs.unshard(file_)
 
 
 def test_hashfs_folders(fs):

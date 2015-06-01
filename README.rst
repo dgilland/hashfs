@@ -48,13 +48,13 @@ Designate a root folder for ``HashFS``. If the folder doesn't already exist, it 
 .. code-block:: python
 
     # Set the `depth` to the number of subfolders the file's hash should be split when saving.
-    # Set the `length` to the desired length of each subfolder.
-    fs = HashFS('temp_hashfs', depth=4, length=1, algorithm='sha256')
+    # Set the `width` to the desired width of each subfolder.
+    fs = HashFS('temp_hashfs', depth=4, width=1, algorithm='sha256')
 
-    # With depth=4 and length=1, files will be saved in the following pattern:
+    # With depth=4 and width=1, files will be saved in the following pattern:
     # temp_hashfs/a/b/c/d/efghijklmnopqrstuvwxyz
 
-    # With depth=3 and length=2, files will be saved in the following pattern:
+    # With depth=3 and width=2, files will be saved in the following pattern:
     # temp_hashfs/ab/cd/ef/ghijklmnopqrstuvwxyz
 
 
@@ -140,7 +140,7 @@ Delete a file by address ID or path.
 Repairing Content
 -----------------
 
-The ``HashFS`` files may not always be in sync with it's ``depth``, ``length``, or ``algorithm`` settings (e.g. if ``HashFS`` takes ownership of a directory that wasn't previously stored using content hashes or if the ``HashFS`` settings change). These files can be easily reindexed using ``repair()``.
+The ``HashFS`` files may not always be in sync with it's ``depth``, ``width``, or ``algorithm`` settings (e.g. if ``HashFS`` takes ownership of a directory that wasn't previously stored using content hashes or if the ``HashFS`` settings change). These files can be easily reindexed using ``repair()``.
 
 
 .. code-block:: python
