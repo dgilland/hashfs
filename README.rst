@@ -14,6 +14,17 @@ Typical use cases for this kind of system are ones where:
 - File metadata is stored elsewhere (e.g. in a database).
 
 
+Features
+========
+
+- Files are stored once and never duplicated.
+- Uses an efficient folder structure optimized for a large number of files. File paths are based on the content hash and are nested based on the first ``n`` number of characters.
+- Can save files from local file paths or readable objects (open file handlers, IO buffers, etc).
+- Able to repair the root folder by reindexing all files. Useful if the hashing algorithm or folder structure options change or to initialize existing files.
+- Supports any hashing algorithm available via ``hashlib.new``.
+- Python 2.7+/3.3+ compatible.
+
+
 Links
 =====
 
@@ -137,8 +148,8 @@ Delete a file by address ID or path.
 **NOTE:** When a file is deleted, any parent directories above the file will also be deleted if they are empty directories.
 
 
-Repairing Content
------------------
+Repairing Files
+---------------
 
 The ``HashFS`` files may not always be in sync with it's ``depth``, ``width``, or ``algorithm`` settings (e.g. if ``HashFS`` takes ownership of a directory that wasn't previously stored using content hashes or if the ``HashFS`` settings change). These files can be easily reindexed using ``repair()``.
 
