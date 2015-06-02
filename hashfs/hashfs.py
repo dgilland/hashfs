@@ -156,15 +156,16 @@ class HashFS(object):
             subpath = os.path.dirname(subpath)
 
     def files(self):
-        """Return generator that yields all files under :attr:`root` directory.
+        """Return generator that yields all files in the :attr:`root`
+        directory.
         """
         for folder, subfolders, files in os.walk(self.root):
             for file in files:
                 yield os.path.abspath(os.path.join(folder, file))
 
     def folders(self):
-        """Return generator that yields all folders under :attr:`root`
-        directory that directly contain files.
+        """Return generator that yields all folders in the :attr:`root`
+        directory that contain files.
         """
         for folder, subfolders, files in os.walk(self.root):
             if files:
@@ -311,6 +312,10 @@ class HashFS(object):
                 yield (path, HashAddress(id,
                                          self.relpath(expected_path),
                                          expected_path))
+
+    def __iter__(self):
+        """Iterate over all files in the :attr:`root` directory."""
+        return self.files()
 
     def __len__(self):
         """Return count of the number of files in the :attr:`root` directory.

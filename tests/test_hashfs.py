@@ -2,6 +2,7 @@
 
 from io import StringIO, BufferedReader
 import os
+import string
 
 import py
 import pytest
@@ -260,6 +261,21 @@ def test_hashfs_files(fs):
         assert file_ in addresses
         assert addresses[file_].abspath == file_
         assert addresses[file_].id == fs.unshard(file_)
+
+
+def test_hashfs_iter(fs):
+    count = 5
+    addresses = put_range(fs, count)
+    test_count = 0
+
+    for file in fs:
+        test_count += 1
+        assert os.path.isfile(file)
+        assert file in addresses
+        assert addresses[file].abspath == file
+        assert addresses[file].id == fs.unshard(file)
+
+    assert test_count == count
 
 
 def test_hashfs_count(fs):
