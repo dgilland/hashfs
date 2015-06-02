@@ -2,6 +2,7 @@ Changelog
 =========
 
 
+- Add ``HashFS.size()`` method that returns the size of all files in bytes.
 - Don't create the root directory (if it doesn't exist) until at least one file has been added.
 
 

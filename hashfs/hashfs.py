@@ -170,6 +170,17 @@ class HashFS(object):
             if files:
                 yield folder
 
+    def size(self):
+        """Return the total size in bytes of all files under the :attr:`root`
+        directory.
+        """
+        total = 0
+
+        for path in self.files():
+            total += os.path.getsize(path)
+
+        return total
+
     def exists(self, file):
         """Check whether a given file id or path exsists on disk."""
         return bool(self.realpath(file))

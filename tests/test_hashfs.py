@@ -272,3 +272,11 @@ def test_hashfs_folders(fs):
     for folder in folders:
         assert os.path.exists(folder)
         assert os.path.isfile(os.path.join(folder, os.listdir(folder)[0]))
+
+
+def test_hashfs_size(fs):
+    fs.put(StringIO(u'{0}'.format(string.ascii_lowercase)))
+    fs.put(StringIO(u'{0}'.format(string.ascii_uppercase)))
+    expected = len(string.ascii_lowercase) + len(string.ascii_uppercase)
+
+    assert fs.size() == expected
