@@ -170,6 +170,14 @@ class HashFS(object):
             if files:
                 yield folder
 
+    def count(self):
+        """Return count of the number of files in the :attr:`root` directory.
+        """
+        count = 0
+        for _ in self:
+            count += 1
+        return count
+
     def size(self):
         """Return the total size in bytes of all files under the :attr:`root`
         directory.
@@ -303,6 +311,11 @@ class HashFS(object):
                 yield (path, HashAddress(id,
                                          self.relpath(expected_path),
                                          expected_path))
+
+    def __len__(self):
+        """Return count of the number of files in the :attr:`root` directory.
+        """
+        return self.count()
 
 
 class HashAddress(namedtuple('HashAddress', ['id', 'relpath', 'abspath'])):

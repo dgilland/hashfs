@@ -262,6 +262,18 @@ def test_hashfs_files(fs):
         assert addresses[file_].id == fs.unshard(file_)
 
 
+def test_hashfs_count(fs):
+    count = 5
+    put_range(fs, count)
+    assert fs.count() == count
+
+
+def test_hashfs_len(fs):
+    count = 5
+    put_range(fs, count)
+    assert len(fs) == count
+
+
 def test_hashfs_folders(fs):
     count = 5
     addresses = put_range(fs, count)
