@@ -42,14 +42,11 @@ class HashFS(object):
                  fmode=0o664,
                  dmode=0o755):
         self.root = os.path.realpath(root)
-        self.fmode = fmode
-        self.dmode = dmode
         self.depth = depth
         self.width = width
         self.algorithm = algorithm
-
-        # Ensure root directory exists.
-        self.makepath(self.root)
+        self.fmode = fmode
+        self.dmode = dmode
 
     def put(self, file, extension=None):
         """Store contents of `file` on disk using its content hash for the
