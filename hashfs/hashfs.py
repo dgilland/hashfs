@@ -191,7 +191,7 @@ class HashFS(object):
         return total
 
     def exists(self, file):
-        """Check whether a given file id or path exsists on disk."""
+        """Check whether a given file id or path exists on disk."""
         return bool(self.realpath(file))
 
     def haspath(self, path):
@@ -312,6 +312,12 @@ class HashFS(object):
                 yield (path, HashAddress(id,
                                          self.relpath(expected_path),
                                          expected_path))
+
+    def __contains__(self, file):
+        """Return whether a given file id or path is contained in the
+        :attr:`root`. directory.
+        """
+        return self.exists(file)
 
     def __iter__(self):
         """Iterate over all files in the :attr:`root` directory."""

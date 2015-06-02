@@ -155,6 +155,14 @@ def test_hashfs_exists(fs, stringio):
     assert fs.exists(address.abspath)
 
 
+def test_hashfs_contains(fs, stringio):
+    address = fs.put(stringio)
+
+    assert address.id in fs
+    assert address.relpath in fs
+    assert address.abspath in fs
+
+
 def test_hashfs_get(fs, stringio):
     address = fs.put(stringio)
 
@@ -256,11 +264,11 @@ def test_hashfs_files(fs):
 
     assert len(files) == count
 
-    for file_ in files:
-        assert os.path.isfile(file_)
-        assert file_ in addresses
-        assert addresses[file_].abspath == file_
-        assert addresses[file_].id == fs.unshard(file_)
+    for file in files:
+        assert os.path.isfile(file)
+        assert file in addresses
+        assert addresses[file].abspath == file
+        assert addresses[file].id == fs.unshard(file)
 
 
 def test_hashfs_iter(fs):

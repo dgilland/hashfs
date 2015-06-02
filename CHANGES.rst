@@ -5,6 +5,7 @@ Changelog
 - Add ``HashFS.size()`` method that returns the size of all files in bytes.
 - Add ``HashFS.count()``/``HashFS.__len__()`` methods that return the count of all files.
 - Add ``HashFS.__iter__()`` method to support iteration. Proxies to ``HashFS.files()``.
+- Add ``HashFS.__contains__()`` method to support ``in`` operator. Proxies to ``HashFS.exists()``.
 - Don't create the root directory (if it doesn't exist) until at least one file has been added.
 
 
