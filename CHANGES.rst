@@ -7,6 +7,7 @@ Changelog
 - Add ``HashFS.__iter__()`` method to support iteration. Proxies to ``HashFS.files()``.
 - Add ``HashFS.__contains__()`` method to support ``in`` operator. Proxies to ``HashFS.exists()``.
 - Don't create the root directory (if it doesn't exist) until at least one file has been added.
+- Fix ``HashFS.repair()`` not using ``extensions`` argument properly.
 
 
 v0.3.0 (2015-06-02)

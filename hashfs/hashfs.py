@@ -180,7 +180,7 @@ class HashFS(object):
         return count
 
     def size(self):
-        """Return the total size in bytes of all files under the :attr:`root`
+        """Return the total size in bytes of all files in the :attr:`root`
         directory.
         """
         total = 0
@@ -274,7 +274,7 @@ class HashFS(object):
         file path.
         """
         repaired = []
-        corrupted = tuple(self.corrupted())
+        corrupted = tuple(self.corrupted(extensions=extensions))
         oldmask = os.umask(0)
 
         try:
