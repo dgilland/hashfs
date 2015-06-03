@@ -72,6 +72,12 @@ Designate a root folder for ``HashFS``. If the folder doesn't already exist, it 
 **NOTE:** The ``algorithm`` value should be a valid string argument to ``hashlib.new()``.
 
 
+Basic Usage
+===========
+
+``HashFS`` supports basic file storage, retrieval, and removal as well as some more advanced features like file repair.
+
+
 Storing Content
 ---------------
 
@@ -148,6 +154,12 @@ Delete a file by address ID or path.
 **NOTE:** When a file is deleted, any parent directories above the file will also be deleted if they are empty directories.
 
 
+Advanced Usage
+==============
+
+Below are some of the more advanced features of ``HashFS``.
+
+
 Repairing Files
 ---------------
 
@@ -163,6 +175,68 @@ The ``HashFS`` files may not always be in sync with it's ``depth``, ``width``, o
 
 
 **WARNING:** It's recommended that a backup of the directory be made before reparing just in case something goes wrong.
+
+
+Walking Corrupted Files
+-----------------------
+
+Instead of actually repairing the files, you can iterate over them for custom processing.
+
+
+.. code-block:: python
+
+    for corrupted_path, expected_address in fs.corrupted():
+        # do something
+
+
+**WARNING:** ``HashFS.corrupted()`` is a generator so be aware that modifying the file system while iterating could have unexpected results.
+
+
+Walking All Files
+-----------------
+
+Iterate over files.
+
+
+.. code-block:: python
+
+    for file in fs.files():
+        # do something
+
+    # Or using the class' iter method...
+    for file in fs:
+        # do something
+
+
+Iterate over folders that contain files (i.e. ignore the nested subfolders that only contain folders).
+
+
+.. code-block:: python
+
+    for folder in fs.folders():
+        # do something
+
+
+Computing Size
+--------------
+
+Compute the size in bytes of all files in the ``root`` directory.
+
+
+.. code-block:: python
+
+    total_bytes = fs.size()
+
+
+Count the total number of files.
+
+
+.. code-block:: python
+
+    total_files = fs.count()
+
+    # Or via len()...
+    total_files = len(fs)
 
 
 For more details, please see the full documentation at http://hashfs.readthedocs.org.
