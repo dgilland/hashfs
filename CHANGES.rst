@@ -2,6 +2,9 @@ Changelog
 =========
 
 
+v0.4.0 (2015-06-03)
+-------------------
+
 - Add ``HashFS.size()`` method that returns the size of all files in bytes.
 - Add ``HashFS.count()``/``HashFS.__len__()`` methods that return the count of all files.
 - Add ``HashFS.__iter__()`` method to support iteration. Proxies to ``HashFS.files()``.
