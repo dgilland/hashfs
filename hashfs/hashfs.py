@@ -68,10 +68,10 @@ class HashFS(object):
 
         return HashAddress(id, self.relpath(filepath), filepath)
 
-    def copy(self, stream, id, extension=None):
+    def _copy(self, stream, id, extension=None):
         """Copy the contents of `stream` onto disk with an optional file
         extension appended. The copy process uses a temporary file to store the
-        initial contents and then moves this file to it's final location.
+        initial contents and then moves that file to it's final location.
         """
         filepath = self.idpath(id, extension)
 
@@ -315,7 +315,7 @@ class HashFS(object):
 
     def __contains__(self, file):
         """Return whether a given file id or path is contained in the
-        :attr:`root`. directory.
+        :attr:`root` directory.
         """
         return self.exists(file)
 

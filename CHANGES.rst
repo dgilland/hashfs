@@ -2,6 +2,9 @@ Changelog
 =========
 
 
+- Rename private method ``HashFS.copy`` to ``HashFS._copy``.
+
+
 v0.4.0 (2015-06-03)
 -------------------
 
