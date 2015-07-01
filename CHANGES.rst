@@ -3,6 +3,8 @@ Changelog
 
 
 - Rename private method ``HashFS.copy`` to ``HashFS._copy``.
+- Add ``is_duplicate`` attribute to ``HashAddress``.
+- Make ``HashFS.put()`` return ``HashAddress`` with ``is_duplicate=True`` when file with same hash already exists on disk.
 
 
 v0.4.0 (2015-06-03)

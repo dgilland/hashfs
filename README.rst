@@ -104,6 +104,9 @@ Add content to the folder using either readable objects (e.g. ``StringIO``) or f
     # The path relative to fs.root.
     address.relpath
 
+    # Whether the file previously existed.
+    address.is_duplicate
+
 
 Retrieving File Address
 -----------------------

@@ -96,6 +96,14 @@ def test_hashfs_put_file(fs, filepath):
         assert fileobj.read() == to_bytes(filepath.read())
 
 
+def test_hashfs_put_duplicate(fs, stringio):
+    address_a = fs.put(stringio)
+    address_b = fs.put(stringio)
+
+    assert not address_a.is_duplicate
+    assert address_b.is_duplicate
+
+
 @pytest.mark.parametrize('extension', [
     'txt',
     '.txt',
@@ -108,6 +116,7 @@ def test_hashfs_put_extension(fs, stringio, extension):
     assert_file_put(fs, address)
     assert os.path.sep in address.abspath
     assert os.path.splitext(address.abspath)[1].endswith(extension)
+    assert not address.is_duplicate
 
 
 def test_hashfs_put_error(fs):
@@ -121,6 +130,7 @@ def test_hashfs_address(fs, stringio):
     assert fs.root not in address.relpath
     assert os.path.join(fs.root, address.relpath) == address.abspath
     assert address.relpath.replace(os.sep, '') == address.id
+    assert not address.is_duplicate
 
 
 @pytest.mark.parametrize('extension,address_attr', [
@@ -166,6 +176,7 @@ def test_hashfs_contains(fs, stringio):
 def test_hashfs_get(fs, stringio):
     address = fs.put(stringio)
 
+    assert not address.is_duplicate
     assert fs.get(address.id) == address
     assert fs.get(address.relpath) == address
     assert fs.get(address.abspath) == address

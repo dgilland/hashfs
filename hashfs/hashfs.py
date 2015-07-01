@@ -64,9 +64,9 @@ class HashFS(object):
 
         with closing(stream):
             id = self.computehash(stream)
-            filepath = self.copy(stream, id, extension)
+            filepath, is_duplicate = self._copy(stream, id, extension)
 
-        return HashAddress(id, self.relpath(filepath), filepath)
+        return HashAddress(id, self.relpath(filepath), filepath, is_duplicate)
 
     def _copy(self, stream, id, extension=None):
         """Copy the contents of `stream` onto disk with an optional file
@@ -77,11 +77,14 @@ class HashFS(object):
 
         # Only copy file if it doesn't already exist.
         if not os.path.isfile(filepath):
+            is_duplicate = False
             with tmpfile(stream, self.fmode) as fname:
                 self.makepath(os.path.dirname(filepath))
                 shutil.copy(fname, filepath)
+        else:
+            is_duplicate = True
 
-        return filepath
+        return (filepath, is_duplicate)
 
     def get(self, file):
         """Return :class:`HashAdress` from given id or path. If `file` does not
@@ -329,15 +332,24 @@ class HashFS(object):
         return self.count()
 
 
-class HashAddress(namedtuple('HashAddress', ['id', 'relpath', 'abspath'])):
+class HashAddress(namedtuple('HashAddress',
+                             ['id', 'relpath', 'abspath', 'is_duplicate'])):
     """File address containing file's path on disk and it's content hash ID.
 
     Attributes:
         id (str): Hash ID (hexdigest) of file contents.
         relpath (str): Relative path location to :attr:`HashFS.root`.
         abspath (str): Absoluate path location of file on disk.
+        is_duplicate (boolean, optional): Whether the hash address created was
+            a duplicate of a previously existing file. Can only be ``True``
+            after a put operation. Defaults to ``False``.
     """
-    pass
+    def __new__(cls, id, relpath, abspath, is_duplicate=False):
+        return super(HashAddress, cls).__new__(cls,
+                                               id,
+                                               relpath,
+                                               abspath,
+                                               is_duplicate)
 
 
 class Stream(object):
