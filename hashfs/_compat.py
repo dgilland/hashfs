@@ -5,6 +5,18 @@
 
 import sys
 
+try:
+    # Python >= 3.5.
+    from os import scandir, walk
+except ImportError:
+    try:
+        # Back ported scandir package.
+        from scandir import scandir, walk
+    except ImportError:
+        # Back ported package not installed so fallback to baseline.
+        from os import walk
+        scandir = None
+
 
 PY3 = sys.version_info[0] == 3
 

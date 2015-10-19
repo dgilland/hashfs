@@ -18,6 +18,11 @@ readme = read('README.rst')
 changes = read('CHANGES.rst')
 
 
+if sys.version_info < (3, 5):
+    # Install back port of faster os.walk/scandir implementation.
+    meta['__install_requires__'].append('scandir>=1.1')
+
+
 class Tox(TestCommand):
     user_options = [
         ('tox-args=', 'a', "Arguments to pass to tox")

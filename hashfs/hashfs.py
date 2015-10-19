@@ -12,7 +12,7 @@ import shutil
 from tempfile import NamedTemporaryFile
 
 from .utils import issubdir, shard
-from ._compat import to_bytes
+from ._compat import to_bytes, walk
 
 
 class HashFS(object):
@@ -162,7 +162,7 @@ class HashFS(object):
         """Return generator that yields all files in the :attr:`root`
         directory.
         """
-        for folder, subfolders, files in os.walk(self.root):
+        for folder, subfolders, files in walk(self.root):
             for file in files:
                 yield os.path.abspath(os.path.join(folder, file))
 
@@ -170,7 +170,7 @@ class HashFS(object):
         """Return generator that yields all folders in the :attr:`root`
         directory that contain files.
         """
-        for folder, subfolders, files in os.walk(self.root):
+        for folder, subfolders, files in walk(self.root):
             if files:
                 yield folder
 

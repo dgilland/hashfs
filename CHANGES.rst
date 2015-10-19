@@ -2,6 +2,12 @@ Changelog
 =========
 
 
+v0.6.0 (2015-10-19)
+-------------------
+
+- Add faster ``scandir`` package for iterating over files/folders when platform is Python < 3.5. Scandir implementation was added to ``os`` module starting with Python 3.5.
+
+
 v0.5.0 (2015-07-02)
 -------------------
 
