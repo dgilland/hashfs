@@ -177,7 +177,7 @@ The ``HashFS`` files may not always be in sync with it's ``depth``, ``width``, o
     repaired = fs.repair(extensions=False)
 
 
-**WARNING:** It's recommended that a backup of the directory be made before reparing just in case something goes wrong.
+**WARNING:** It's recommended that a backup of the directory be made before repairing just in case something goes wrong.
 
 
 Walking Corrupted Files
