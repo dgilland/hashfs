@@ -184,8 +184,8 @@ def test_hashfs_get(fs, stringio):
 
 
 @pytest.mark.parametrize('address_attr', [
-   'id',
-   'abspath',
+    'id',
+    'abspath',
 ])
 def test_hashfs_delete(fs, stringio, address_attr):
     address = fs.put(stringio)
@@ -311,7 +311,7 @@ def test_hashfs_len(fs):
 
 def test_hashfs_folders(fs):
     count = 5
-    addresses = put_range(fs, count)
+    put_range(fs, count)
     folders = list(fs.folders())
 
     assert len(folders) == count
