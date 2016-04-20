@@ -75,16 +75,37 @@ class HashFS(object):
         """
         filepath = self.idpath(id, extension)
 
-        # Only copy file if it doesn't already exist.
         if not os.path.isfile(filepath):
+            # Only move file if it doesn't already exist.
             is_duplicate = False
-            with tmpfile(stream, self.fmode) as fname:
-                self.makepath(os.path.dirname(filepath))
-                shutil.copy(fname, filepath)
+            fname = self._mktempfile(stream)
+            self.makepath(os.path.dirname(filepath))
+            shutil.move(fname, filepath)
         else:
             is_duplicate = True
 
         return (filepath, is_duplicate)
+
+    def _mktempfile(self, stream):
+        """Create a named temporary file from a :class:`Stream` object and
+        return its filename.
+        """
+        tmp = NamedTemporaryFile(delete=False)
+
+        if self.fmode is not None:
+            oldmask = os.umask(0)
+
+            try:
+                os.chmod(tmp.name, self.fmode)
+            finally:
+                os.umask(oldmask)
+
+        for data in stream:
+            tmp.write(to_bytes(data))
+
+        tmp.close()
+
+        return tmp.name
 
     def get(self, file):
         """Return :class:`HashAdress` from given id or path. If `file` does not
@@ -403,36 +424,3 @@ class Stream(object):
             self._obj.close()
         else:
             self._obj.seek(self._pos)
-
-
-@contextmanager
-def tmpfile(stream, mode=None):
-    """Context manager that writes a :class:`Stream` object to a named
-    temporary file and yield it's filename. Cleanup deletes from the temporary
-    file from disk.
-
-    Args:
-        stream (Stream): Stream object to write to disk as temporary file.
-        mode (int, optional): File mode to set on temporary file.
-
-    Returns:
-        str: Temporoary file name
-    """
-    tmp = NamedTemporaryFile(delete=False)
-
-    if mode is not None:
-        oldmask = os.umask(0)
-
-        try:
-            os.chmod(tmp.name, mode)
-        finally:
-            os.umask(oldmask)
-
-    for data in stream:
-        tmp.write(to_bytes(data))
-
-    tmp.close()
-
-    yield tmp.name
-
-    os.remove(tmp.name)
