@@ -2,6 +2,12 @@ Changelog
 =========
 
 
+v0.7.0 (2016-04-19)
+-------------------
+
+- Use ``shutil.move`` instead of ``shutil.copy`` to move temporary file created during ``put`` operation to ``HashFS`` directory.
+
+
 v0.6.0 (2015-10-19)
 -------------------
 
