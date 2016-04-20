@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: skip-file
+# flake8: noqa
 """Python 2/3 compatibility
 """
 
