@@ -41,7 +41,7 @@ install:
 	$(PIP) install -r requirements.txt
 
 .PHONY: test
-test: pylint-errors pep8 pytest
+test: flake8 pytest
 
 .PHONY: pytest
 pytest:
@@ -54,22 +54,12 @@ test-full: pylint-errors test-setuppy clean-files
 test-setuppy:
 	python setup.py test
 
-
 .PHONY: lint
-lint: pylint pep8
+lint: flake8
 
-.PHONY: pep8
-pep8:
-	$(ENV_ACT) pep8 $(PYTEST_TARGET)
-
-.PHONY: pylint
-pylint:
-	$(ENV_ACT) pylint $(COVERAGE_TARGET)
-
-.PHONY: pylint-errors
-pylint-errors:
-	$(ENV_ACT) pylint -E $(COVERAGE_TARGET)
-
+.PHONY: flake8
+flake8:
+	$(ENV_ACT) flake8 $(PYTEST_TARGET)
 
 .PHONY: master
 master:
@@ -109,6 +99,5 @@ travisci-install:
 
 .PHONY: travisci-test
 travisci-test:
-	pep8 $(PYTEST_TARGET)
-	pylint -E $(COVERAGE_TARGET)
+	flake8 $(PYTEST_TARGET)
 	py.test $(PYTEST_ARGS) $(COVERAGE_ARGS) $(COVERAGE_TARGET) $(PYTEST_TARGET)

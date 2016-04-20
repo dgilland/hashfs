@@ -3,7 +3,7 @@
 
 from collections import namedtuple
 from contextlib import contextmanager, closing
-from distutils.dir_util import mkpath  # pylint: disable=no-name-in-module
+from distutils.dir_util import mkpath
 import glob
 import hashlib
 import io
