@@ -419,7 +419,7 @@ class Stream(object):
             # This allows put strategies to use OS functions, working with
             # paths, instead of being limited to the API provided by Python
             # file-like objects
-            self.name = obj.name
+            self.name = None if isinstance(obj.name, int) else obj.name
         except AttributeError:
             self.name = None
 
