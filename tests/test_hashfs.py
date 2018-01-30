@@ -118,6 +118,17 @@ def test_hashfs_put_extension(fs, stringio, extension):
     assert os.path.splitext(address.abspath)[1].endswith(extension)
     assert not address.is_duplicate
 
+def test_hashfs_put_simulate(fs, stringio):
+    simulated_address = fs.put(stringio, simulate=True)
+
+    assert not fs.exists(simulated_address.id)
+    assert not os.path.exists(simulated_address.abspath)
+
+    real_address = fs.put(stringio)
+    assert_file_put(fs, real_address)
+    assert simulated_address == real_address
+
+    assert fs.put(stringio, simulate=True).is_duplicate
 
 def test_hashfs_put_error(fs):
     with pytest.raises(ValueError):

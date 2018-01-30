@@ -48,7 +48,7 @@ class HashFS(object):
         self.fmode = fmode
         self.dmode = dmode
 
-    def put(self, file, extension=None):
+    def put(self, file, extension=None, simulate=False):
         """Store contents of `file` on disk using its content hash for the
         address.
 
@@ -56,6 +56,8 @@ class HashFS(object):
             file (mixed): Readable object or path to file.
             extension (str, optional): Optional extension to append to file
                 when saving.
+            simulate (bool, optional): Return the HashAddress of the file that
+                would be appended but don't do anything.
 
         Returns:
             HashAddress: File's hash address.
@@ -69,31 +71,14 @@ class HashFS(object):
             # Only move file if it doesn't already exist.
             if not os.path.isfile(filepath):
                 is_duplicate = False
-                fname = self._mktempfile(stream)
-                self.makepath(os.path.dirname(filepath))
-                shutil.move(fname, filepath)
+                if not simulate:
+                    fname = self._mktempfile(stream)
+                    self.makepath(os.path.dirname(filepath))
+                    shutil.move(fname, filepath)
             else:
                 is_duplicate = True
 
         return HashAddress(id, self.relpath(filepath), filepath, is_duplicate)
-
-    def _copy(self, stream, id, extension=None):
-        """Copy the contents of `stream` onto disk with an optional file
-        extension appended. The copy process uses a temporary file to store the
-        initial contents and then moves that file to it's final location.
-        """
-        filepath = self.idpath(id, extension)
-
-        if not os.path.isfile(filepath):
-            # Only move file if it doesn't already exist.
-            is_duplicate = False
-            fname = self._mktempfile(stream)
-            self.makepath(os.path.dirname(filepath))
-            shutil.move(fname, filepath)
-        else:
-            is_duplicate = True
-
-        return (filepath, is_duplicate)
 
     def _mktempfile(self, stream):
         """Create a named temporary file from a :class:`Stream` object and
