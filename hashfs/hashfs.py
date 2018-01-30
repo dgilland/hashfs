@@ -34,9 +34,9 @@ class HashFS(object):
         dmode (int, optional): Directory mode permission to set for
             subdirectories. Defaults to ``0o755`` which allows owner/group to
             read/write and everyone else to read and everyone to execute.
-        put_strategy (mixed, optional): Default ``put_strategy`` for :meth:`put`
-            method. See :meth:`put` for more information. Defaults to
-            :attr:`PutStrategies.copy`.
+        put_strategy (mixed, optional): Default ``put_strategy`` for
+            :meth:`put` method. See :meth:`put` for more information. Defaults
+            to :attr:`PutStrategies.copy`.
     """
     def __init__(self,
                  root,
@@ -53,7 +53,7 @@ class HashFS(object):
         self.fmode = fmode
         self.dmode = dmode
         self.put_strategy = (PutStrategies.get(put_strategy) or
-                PutStrategies.copy)
+                             PutStrategies.copy)
 
     def put(self, file, extension=None, put_strategy=None, simulate=False):
         """Store contents of `file` on disk using its content hash for the
@@ -63,10 +63,10 @@ class HashFS(object):
             file (mixed): Readable object or path to file.
             extension (str, optional): Optional extension to append to file
                 when saving.
-            put_strategy (mixed, optional): The strategy to use for adding files;
-                may be a function or the string name of one of the built-in
-                put strategies declared in :class:`PutStrategies` class.
-                Defaults to :attr:`PutStrategies.copy`.
+            put_strategy (mixed, optional): The strategy to use for adding
+                files; may be a function or the string name of one of the
+                built-in put strategies declared in :class:`PutStrategies`
+                class. Defaults to :attr:`PutStrategies.copy`.
             simulate (bool, optional): Return the :class:`HashAddress` of the
                 file that would be appended but don't do anything.
 
@@ -97,7 +97,8 @@ class HashFS(object):
                 if not simulate:
                     self.makepath(os.path.dirname(filepath))
                     put_strategy = (PutStrategies.get(put_strategy) or
-                            self.put_strategy or PutStrategies.copy)
+                                    self.put_strategy or
+                                    PutStrategies.copy)
                     put_strategy(self, stream, filepath)
             else:
                 is_duplicate = True
@@ -474,7 +475,6 @@ class PutStrategies:
         """The default copy put strategy, writes the file object to a
         temporary file on disk and then moves it into place."""
         shutil.move(hashfs._mktempfile(src_stream), dst_path)
-
 
     if hasattr(os, 'link'):
         @classmethod
