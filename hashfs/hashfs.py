@@ -408,6 +408,15 @@ class Stream(object):
             raise ValueError(('Object must be a valid file path or '
                               'a readable object.'))
 
+        try:
+            # Expose the original file path if available.
+            # This allows put strategies to use OS functions, working with
+            # paths, instead of being limited to the API provided by Python
+            # file-like objects
+            self.name = obj.name
+        except AttributeError:
+            self.name = None
+
         self._obj = obj
         self._pos = pos
 
