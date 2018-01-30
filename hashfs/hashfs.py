@@ -64,7 +64,16 @@ class HashFS(object):
 
         with closing(stream):
             id = self.computehash(stream)
-            filepath, is_duplicate = self._copy(stream, id, extension)
+            filepath = self.idpath(id, extension)
+
+            # Only move file if it doesn't already exist.
+            if not os.path.isfile(filepath):
+                is_duplicate = False
+                fname = self._mktempfile(stream)
+                self.makepath(os.path.dirname(filepath))
+                shutil.move(fname, filepath)
+            else:
+                is_duplicate = True
 
         return HashAddress(id, self.relpath(filepath), filepath, is_duplicate)
 
