@@ -8,6 +8,7 @@ import glob
 import hashlib
 import io
 import os
+import errno
 import shutil
 from tempfile import NamedTemporaryFile
 
@@ -75,6 +76,11 @@ class HashFS(object):
         data to add; and ``filepath`` is the string absolute file path inside
         the HashFS where it needs to be saved. The put strategy function should
         create the path ``filepath`` containing the data in ``stream``.
+
+        There are currently two built-in put strategies: "copy" (the default)
+        and "link". "link" attempts to hard link the file into the HashFS if
+        the platform and underlying filesystem support it, and falls back to
+        "copy" behaviour.
 
         Returns:
             HashAddress: File's hash address.
@@ -468,3 +474,40 @@ class PutStrategies:
         """The default copy put strategy, writes the file object to a
         temporary file on disk and then moves it into place."""
         shutil.move(hashfs._mktempfile(src_stream), dst_path)
+
+
+    if hasattr(os, 'link'):
+        @classmethod
+        def link(cls, hashfs, src_stream, dst_path):
+            """Use os.link if available to create a hard link to the original
+            file if the HashFS and the original file reside on the same
+            filesystem and the filesystem supports hard links."""
+            # Get the original file path exposed by the Stream instance
+            src_path = src_stream.name
+            # No path available because e.g. a StringIO was used
+            if not src_path:
+                # Just copy
+                return cls.copy(hashfs, src_stream, dst_path)
+
+            try:
+                # Try to create the hard link
+                os.link(src_path, dst_path)
+            except EnvironmentError as e:
+                # These are link specific errors. If any of these 3 are raised
+                # we try to copy instead
+                # EMLINK - src already has the maximum number of links to it
+                # EXDEV - invalid cross-device link
+                # EPERM - the dst filesystem does not support hard links
+                # (note EPERM could also be another permissions error; these
+                # will be raised again when we try to copy)
+                if e.errno not in (errno.EMLINK, errno.EXDEV, errno.EPERM):
+                    raise
+                return cls.copy(hashfs, src_stream, dst_path)
+            else:
+                # After creating the hard link, make sure it has the correct
+                # file permissions
+                os.chmod(dst_path, hashfs.fmode)
+    else:
+        # Platform does not support os.link, so use the default copy strategy
+        # instead
+        link = copy
