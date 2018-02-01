@@ -2,6 +2,7 @@
 
 from io import StringIO, BufferedReader
 import os
+import os.path
 import string
 
 import py
@@ -9,6 +10,7 @@ import pytest
 
 import hashfs
 from hashfs._compat import to_bytes
+from hashfs.hashfs import PutStrategies
 
 
 @pytest.fixture
@@ -47,6 +49,10 @@ def filepath(testfile):
 @pytest.fixture
 def fs(testpath):
     return hashfs.HashFS(str(testpath))
+
+
+def dummy_put_strategy(*a, **kw):
+    pass
 
 
 def put_range(fs, count):
@@ -135,6 +141,59 @@ def test_hashfs_put_simulate(fs, stringio):
 def test_hashfs_put_error(fs):
     with pytest.raises(ValueError):
         fs.put('foo')
+
+
+def test_put_strategy_lookup():
+    assert PutStrategies.get("copy") == PutStrategies.copy
+    assert PutStrategies.get("link") == PutStrategies.link
+    assert PutStrategies.get(dummy_put_strategy) is dummy_put_strategy
+    with pytest.raises(ValueError):
+        PutStrategies.get('get')
+    with pytest.raises(AttributeError):
+        PutStrategies.get('fake value')
+
+
+@pytest.mark.parametrize('put_strategy', [
+    None,
+    'copy',
+    PutStrategies.copy
+])
+def test_hashfs_default_put_strategy(fs, filepath, put_strategy):
+    address = fs.put(str(filepath), put_strategy=put_strategy)
+
+    assert_file_put(fs, address)
+
+    with open(address.abspath, 'rb') as fileobj:
+        assert fileobj.read() == to_bytes(filepath.read())
+
+
+@pytest.mark.parametrize('put_strategy', [
+    'link',
+    PutStrategies.link
+])
+def test_hashfs_link_put_strategy(fs, filepath, put_strategy):
+    address = fs.put(str(filepath), put_strategy=put_strategy)
+
+    assert_file_put(fs, address)
+
+    with open(address.abspath, 'rb') as fileobj:
+        assert fileobj.read() == to_bytes(filepath.read())
+
+    # If the platform supports hard links and the os.path.samefile function
+    # (Windows support for hard links and samefile requires >= Python 3.2)
+    if hasattr(os.path, 'samefile') and hasattr(os, 'link'):
+        assert os.path.samefile(address.abspath, str(filepath))
+
+
+def test_hashfs_link_put_strategy_fallback(fs, stringio):
+    assert not hasattr(stringio, 'name')
+
+    address = fs.put(stringio, put_strategy="link")
+
+    assert_file_put(fs, address)
+
+    with open(address.abspath, 'rb') as fileobj:
+        assert fileobj.read() == to_bytes(stringio.getvalue())
 
 
 def test_hashfs_address(fs, stringio):
