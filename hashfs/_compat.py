@@ -34,8 +34,9 @@ if scandir:
 else:
     def list_dir_files(path):
         for file in os.listdir(path):
+            file = os.path.join(path, file)
             if os.path.isfile(file):
-                yield os.path.join(path, file)
+                yield file
 
 
 

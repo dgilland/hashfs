@@ -230,9 +230,9 @@ def test_hashfs_address(fs, stringio):
     (True, TESTTREE_NUM_FILES_REC),
 ])
 def test_hashfs_putdir(fs, testtree, recursive, exp_num_files, extensions):
-    it = fs.putdir(str(testtree), recursive=recursive)
+    putfiles = list(fs.putdir(str(testtree), recursive=recursive))
 
-    for i, (src, address) in enumerate(it):
+    for src, address in putfiles:
         assert_file_put(fs, address)
 
         assert (os.path.splitext(src)[1] ==
@@ -242,7 +242,7 @@ def test_hashfs_putdir(fs, testtree, recursive, exp_num_files, extensions):
             with open(address.abspath, 'rb') as dstfile:
                 assert srcfile.read() == dstfile.read()
 
-    assert i + 1 == exp_num_files
+    assert len(putfiles) == exp_num_files
 
 
 @pytest.mark.parametrize('lowercase_extensions', [
