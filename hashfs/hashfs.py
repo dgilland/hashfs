@@ -37,6 +37,8 @@ class HashFS(object):
         put_strategy (mixed, optional): Default ``put_strategy`` for
             :meth:`put` method. See :meth:`put` for more information. Defaults
             to :attr:`PutStrategies.copy`.
+        lowercase_extensions (bool, optional): Normalize all file extensions
+            to lower case when adding files. Defaults to ``False``.
     """
     def __init__(self,
                  root,
@@ -45,7 +47,8 @@ class HashFS(object):
                  algorithm='sha256',
                  fmode=0o664,
                  dmode=0o755,
-                 put_strategy=None):
+                 put_strategy=None,
+                 lowercase_extensions=False):
         self.root = os.path.realpath(root)
         self.depth = depth
         self.width = width
@@ -54,6 +57,7 @@ class HashFS(object):
         self.dmode = dmode
         self.put_strategy = (PutStrategies.get(put_strategy) or
                              PutStrategies.copy)
+        self.lowercase_extensions = lowercase_extensions
 
     def put(self, file, extension=None, put_strategy=None, simulate=False):
         """Store contents of `file` on disk using its content hash for the
@@ -86,6 +90,9 @@ class HashFS(object):
             HashAddress: File's hash address.
         """
         stream = Stream(file)
+
+        if extension and self.lowercase_extensions:
+            extension = extension.lower()
 
         with closing(stream):
             id = self.computehash(stream)
