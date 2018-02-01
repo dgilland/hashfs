@@ -51,6 +51,22 @@ def fs(testpath):
     return hashfs.HashFS(str(testpath))
 
 
+@pytest.fixture
+def testtree(testpath):
+    testpath.join("file a.txt").write(b'file a contents')
+    testpath.join("file b").write(b'file b contents')
+    testpath.join("file c.foo").write(b'file c contents')
+    subdir = testpath.mkdir("subdir")
+    subdir.join("1").write(b"xyz")
+    subdir.join("2").write(b"foo")
+    subdir.mkdir("subsubdir").join("file").write("contents.bar")
+    return testpath
+
+
+TESTTREE_NUM_FILES_NON_REC = 3
+TESTTREE_NUM_FILES_REC = 6
+
+
 def dummy_put_strategy(*a, **kw):
     pass
 
@@ -203,6 +219,30 @@ def test_hashfs_address(fs, stringio):
     assert os.path.join(fs.root, address.relpath) == address.abspath
     assert address.relpath.replace(os.sep, '') == address.id
     assert not address.is_duplicate
+
+
+@pytest.mark.parametrize('extensions', [
+    True,
+    False,
+])
+@pytest.mark.parametrize('recursive,exp_num_files', [
+    (False, TESTTREE_NUM_FILES_NON_REC),
+    (True, TESTTREE_NUM_FILES_REC),
+])
+def test_hashfs_putdir(fs, testtree, recursive, exp_num_files, extensions):
+    it = fs.putdir(str(testtree), recursive=recursive)
+
+    for i, (src, address) in enumerate(it):
+        assert_file_put(fs, address)
+
+        assert (os.path.splitext(src)[1] ==
+                os.path.splitext(address.abspath)[1])
+
+        with open(src, 'rb') as srcfile:
+            with open(address.abspath, 'rb') as dstfile:
+                assert srcfile.read() == dstfile.read()
+
+    assert i + 1 == exp_num_files
 
 
 @pytest.mark.parametrize('extension,address_attr', [

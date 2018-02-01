@@ -97,6 +97,18 @@ Add content to the folder using either readable objects (e.g. ``StringIO``) or f
     # Or if you'd like to save the file with an extension...
     address = fs.put(some_content, '.txt')
 
+    # Put all files in a directory
+    for srcpath, address in fs.putdir("dir"):
+        #...
+
+    # Put all files in a directory tree recursively
+    for srcpath, address in fs.putdir("dir", recursive=True):
+        #...
+
+    # Put all files in a directory tree using same extensions
+    for srcpath, address in fs.putdir("dir", extensions=True):
+        # address.abspath will have same file extension as srcpath
+
     # The id of the file (i.e. the hexdigest of its contents).
     address.id
 

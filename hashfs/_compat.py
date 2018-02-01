@@ -4,6 +4,8 @@
 """
 
 import sys
+import os
+import os.path
 
 try:
     # Python >= 3.5.
@@ -16,6 +18,25 @@ except ImportError:
         # Back ported package not installed so fallback to baseline.
         from os import walk
         scandir = None
+
+if scandir:
+    def list_dir_files(path):
+        it = scandir(path)
+        try:
+            for file in it:
+                if file.is_file():
+                    yield file.path
+        finally:
+            try:
+                it.close()
+            except AttributeError:
+                pass
+else:
+    def list_dir_files(path):
+        for file in os.listdir(path):
+            if os.path.isfile(file):
+                yield os.path.join(path, file)
+
 
 
 PY3 = sys.version_info[0] == 3
