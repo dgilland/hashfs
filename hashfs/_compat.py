@@ -24,6 +24,7 @@ PY3 = sys.version_info[0] == 3
 if PY3:
     text_type = str
     string_types = (str,)
+    FileExistsError = FileExistsError
 
     def to_bytes(text):
         if not isinstance(text, bytes):
@@ -32,6 +33,7 @@ if PY3:
 else:
     text_type = unicode
     string_types = (str, unicode)
+    FileExistsError = OSError
 
     def to_bytes(text):
         if not isinstance(text, string_types):

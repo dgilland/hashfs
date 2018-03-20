@@ -3,16 +3,17 @@
 
 from collections import namedtuple
 from contextlib import contextmanager, closing
-from distutils.dir_util import mkpath
 import glob
 import hashlib
+import sys
 import io
 import os
+import os.path
 import shutil
 from tempfile import NamedTemporaryFile
 
 from .utils import issubdir, shard
-from ._compat import to_bytes, walk
+from ._compat import to_bytes, walk, FileExistsError
 
 
 class HashFS(object):
@@ -226,7 +227,11 @@ class HashFS(object):
 
     def makepath(self, path):
         """Physically create the folder path on disk."""
-        mkpath(path, mode=self.dmode)
+        try:
+            os.makedirs(path, self.dmode)
+        except FileExistsError:
+            assert os.path.isdir(path),\
+                'expected {} to be a directory'.format(path)
 
     def relpath(self, path):
         """Return `path` relative to the :attr:`root` directory."""
