@@ -45,10 +45,10 @@ test: flake8 pytest
 
 .PHONY: pytest
 pytest:
-	$(ENV_ACT) py.test $(PYTEST_ARGS) $(COVERAGE_ARGS) $(COVERAGE_TARGET) $(PYTEST_TARGET)
+	$(ENV_ACT) pytest $(PYTEST_ARGS) $(COVERAGE_ARGS) $(COVERAGE_TARGET) $(PYTEST_TARGET)
 
 .PHONY: test-full
-test-full: pylint-errors test-setuppy clean-files
+test-full: lint test-setuppy clean-files
 
 .PHONY: test-setuppy
 test-setuppy:
@@ -100,4 +100,4 @@ travisci-install:
 .PHONY: travisci-test
 travisci-test:
 	flake8 $(PYTEST_TARGET)
-	py.test $(PYTEST_ARGS) $(COVERAGE_ARGS) $(COVERAGE_TARGET) $(PYTEST_TARGET)
+	pytest $(PYTEST_ARGS) $(COVERAGE_ARGS) $(COVERAGE_TARGET) $(PYTEST_TARGET)
