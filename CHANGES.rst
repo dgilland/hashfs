@@ -2,6 +2,9 @@ Changelog
 =========
 
 
+v0.7.1 (2018-10-13)
+-------------------
+
 - Replace usage of ``distutils.dir_util.mkpath`` with ``os.path.makedirs``.
 
 
