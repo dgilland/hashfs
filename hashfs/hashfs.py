@@ -8,7 +8,6 @@ import hashlib
 import sys
 import io
 import os
-import os.path
 import shutil
 from tempfile import NamedTemporaryFile
 
