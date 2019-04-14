@@ -63,10 +63,10 @@ Designate a root folder for ``HashFS``. If the folder doesn't already exist, it 
     fs = HashFS('temp_hashfs', depth=4, width=1, algorithm='sha256')
 
     # With depth=4 and width=1, files will be saved in the following pattern:
-    # temp_hashfs/a/b/c/d/efghijklmnopqrstuvwxyz
+    # temp_hashfs/a/b/c/d/abcdefghijklmnopqrstuvwxyz
 
     # With depth=3 and width=2, files will be saved in the following pattern:
-    # temp_hashfs/ab/cd/ef/ghijklmnopqrstuvwxyz
+    # temp_hashfs/ab/cd/ef/abcdefghijklmnopqrstuvwxyz
 
 
 **NOTE:** The ``algorithm`` value should be a valid string argument to ``hashlib.new()``.
@@ -92,17 +92,11 @@ Add content to the folder using either readable objects (e.g. ``StringIO``) or f
 
     address = fs.put(some_content)
 
-    # Or if you'd like to save the file with an extension...
-    address = fs.put(some_content, '.txt')
-
     # The id of the file (i.e. the hexdigest of its contents).
     address.id
 
     # The absolute path where the file was saved.
     address.abspath
-
-    # The path relative to fs.root.
-    address.relpath
 
     # Whether the file previously existed.
     address.is_duplicate
@@ -111,34 +105,23 @@ Add content to the folder using either readable objects (e.g. ``StringIO``) or f
 Retrieving File Address
 -----------------------
 
-Get a file's ``HashAddress`` by address ID or path. This address would be identical to the address returned by ``put()``.
+Get a file's ``HashAddress`` by address ID. This address would be identical to the address returned by ``put()``.
 
 .. code-block:: python
 
     assert fs.get(address.id) == address
-    assert fs.get(address.relpath) == address
-    assert fs.get(address.abspath) == address
     assert fs.get('invalid') is None
 
 
 Retrieving Content
 ------------------
 
-Get a ``BufferedReader`` handler for an existing file by address ID or path.
+Get a ``BufferedReader`` handler for an existing file by address ID.
 
 
 .. code-block:: python
 
     fileio = fs.open(address.id)
-
-    # Or using the full path...
-    fileio = fs.open(address.abspath)
-
-    # Or using a path relative to fs.root
-    fileio = fs.open(address.relpath)
-
-
-**NOTE:** When getting a file that was saved with an extension, it's not necessary to supply the extension. Extensions are ignored when looking for a file based on the ID or path.
 
 
 Removing Content
@@ -150,8 +133,6 @@ Delete a file by address ID or path.
 .. code-block:: python
 
     fs.delete(address.id)
-    fs.delete(address.abspath)
-    fs.delete(address.relpath)
 
 
 **NOTE:** When a file is deleted, any parent directories above the file will also be deleted if they are empty directories.
@@ -172,9 +153,6 @@ The ``HashFS`` files may not always be in sync with it's ``depth``, ``width``, o
 .. code-block:: python
 
     repaired = fs.repair()
-
-    # Or if you want to drop file extensions...
-    repaired = fs.repair(extensions=False)
 
 
 **WARNING:** It's recommended that a backup of the directory be made before repairing just in case something goes wrong.

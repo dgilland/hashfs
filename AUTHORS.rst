@@ -11,4 +11,4 @@ Lead
 Contributors
 ------------
 
-None
+- Justin Keogh, github.com@v6y.net, `jakeogh@github <https://github.com/jakeogh>`_

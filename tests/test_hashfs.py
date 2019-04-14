@@ -32,9 +32,7 @@ def fileio(testfile):
         io.write(b'foo')
 
     io = open(str(testfile), 'rb')
-
     yield io
-
     io.close()
 
 
@@ -56,17 +54,20 @@ def put_range(fs, count):
 
 
 def assert_file_put(fs, address):
-    directory = os.path.dirname(address.relpath)
-    dir_parts = [part for part in directory.split(os.path.sep) if part]
+    directory = os.path.dirname(address.abspath)
+    reldirectory = directory.split(fs.root)[-1]
+    dir_parts = [part for part in reldirectory.split(os.path.sep) if part]
 
     assert address.abspath in tuple(py.path.local(fs.root).visit())
     assert fs.exists(address.id)
 
-    id = os.path.splitext(address.relpath.replace(os.path.sep, ''))[0]
+    id = address.abspath.split(os.path.sep)[-1]
     assert id == address.id
 
     assert len(dir_parts) == fs.depth
     assert all(len(part) == fs.width for part in dir_parts)
+
+    assert len(address.relpath.split(os.path.sep)) == fs.depth + 1
 
 
 def test_hashfs_put_stringio(fs, stringio):
@@ -104,21 +105,6 @@ def test_hashfs_put_duplicate(fs, stringio):
     assert address_b.is_duplicate
 
 
-@pytest.mark.parametrize('extension', [
-    'txt',
-    '.txt',
-    'md',
-    '.md'
-])
-def test_hashfs_put_extension(fs, stringio, extension):
-    address = fs.put(stringio, extension)
-
-    assert_file_put(fs, address)
-    assert os.path.sep in address.abspath
-    assert os.path.splitext(address.abspath)[1].endswith(extension)
-    assert not address.is_duplicate
-
-
 def test_hashfs_put_error(fs):
     with pytest.raises(ValueError):
         fs.put('foo')
@@ -127,22 +113,18 @@ def test_hashfs_put_error(fs):
 def test_hashfs_address(fs, stringio):
     address = fs.put(stringio)
 
-    assert fs.root not in address.relpath
-    assert os.path.join(fs.root, address.relpath) == address.abspath
-    assert address.relpath.replace(os.sep, '') == address.id
+    assert fs.root in address.abspath
+    assert address.abspath.split(os.path.sep)[-1] == address.id
     assert not address.is_duplicate
 
 
-@pytest.mark.parametrize('extension,address_attr', [
-    ('', 'id'),
-    ('.txt', 'id'),
-    ('txt', 'id'),
-    ('', 'abspath'),
-    ('.txt', 'abspath'),
-    ('txt', 'abspath'),
+@pytest.mark.parametrize('address_attr', [
+    ('id'),
+    ('id'),
+    ('id'),
 ])
-def test_hashfs_open(fs, stringio, extension, address_attr):
-    address = fs.put(stringio, extension)
+def test_hashfs_open(fs, stringio, address_attr):
+    address = fs.put(stringio)
 
     fileobj = fs.open(getattr(address, address_attr))
 
@@ -153,7 +135,7 @@ def test_hashfs_open(fs, stringio, extension, address_attr):
 
 
 def test_hashfs_open_error(fs):
-    with pytest.raises(IOError):
+    with pytest.raises(ValueError):
         fs.open('invalid')
 
 
@@ -161,16 +143,12 @@ def test_hashfs_exists(fs, stringio):
     address = fs.put(stringio)
 
     assert fs.exists(address.id)
-    assert fs.exists(address.relpath)
-    assert fs.exists(address.abspath)
 
 
 def test_hashfs_contains(fs, stringio):
     address = fs.put(stringio)
 
     assert address.id in fs
-    assert address.relpath in fs
-    assert address.abspath in fs
 
 
 def test_hashfs_get(fs, stringio):
@@ -178,14 +156,19 @@ def test_hashfs_get(fs, stringio):
 
     assert not address.is_duplicate
     assert fs.get(address.id) == address
-    assert fs.get(address.relpath) == address
-    assert fs.get(address.abspath) == address
-    assert fs.get('invalid') is None
+    with pytest.raises(ValueError):
+        fs.get('invalid')
+
+    with pytest.raises(ValueError):
+        fs.get('0' * (fs.digestlen + 1))
+    with pytest.raises(ValueError):
+        fs.get('0' * (fs.digestlen - 1))
+    with pytest.raises(FileNotFoundError):
+        fs.get('0' * fs.digestlen)
 
 
 @pytest.mark.parametrize('address_attr', [
     'id',
-    'abspath',
 ])
 def test_hashfs_delete(fs, stringio, address_attr):
     address = fs.put(stringio)
@@ -195,7 +178,16 @@ def test_hashfs_delete(fs, stringio, address_attr):
 
 
 def test_hashfs_delete_error(fs):
-    fs.delete('invalid')
+    with pytest.raises(ValueError):
+        fs.delete('invalid')
+    with pytest.raises(ValueError):
+        fs.delete('0' * (fs.digestlen + 1))
+    with pytest.raises(ValueError):
+        fs.delete('0' * (fs.digestlen - 1))
+    with pytest.raises(FileNotFoundError):
+        fs.delete('0' * fs.digestlen)
+    with pytest.raises(ValueError):
+        fs.delete(('0' * (fs.digestlen - 1)) + 'z')
 
 
 def test_hashfs_remove_empty(fs):
@@ -266,6 +258,20 @@ def test_hashfs_repair_duplicates(fs, stringio):
     assert original_path == original_address.abspath
     assert not os.path.isfile(original_path)
     assert_file_put(newfs, address)
+
+
+def test_hashfs_idpath(fs):
+    assert fs.idpath('0' * fs.digestlen) == fs.root + os.path.sep + \
+        os.path.sep.join(list('0' * fs.depth)) + os.path.sep + \
+        ('0' * fs.digestlen)
+    with pytest.raises(ValueError):
+        fs.idpath('invalid')
+    with pytest.raises(ValueError):
+        fs.idpath('0' * (fs.digestlen + 1))
+    with pytest.raises(ValueError):
+        fs.idpath('0' * (fs.digestlen - 1))
+    with pytest.raises(ValueError):
+        fs.idpath(('0' * (fs.digestlen - 1)) + 'z')
 
 
 def test_hashfs_files(fs):

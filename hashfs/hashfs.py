@@ -2,10 +2,8 @@
 """
 
 from collections import namedtuple
-from contextlib import contextmanager, closing
-import glob
+from contextlib import closing
 import hashlib
-import sys
 import io
 import os
 import shutil
@@ -42,20 +40,19 @@ class HashFS(object):
                  fmode=0o664,
                  dmode=0o755):
         self.root = os.path.realpath(root)
-        self.depth = depth
-        self.width = width
+        self.depth = int(depth)
+        self.width = int(width)
         self.algorithm = algorithm
+        self.digestlen = hashlib.new(algorithm).digest_size * 2
         self.fmode = fmode
         self.dmode = dmode
 
-    def put(self, file, extension=None):
+    def put(self, file):
         """Store contents of `file` on disk using its content hash for the
         address.
 
         Args:
             file (mixed): Readable object or path to file.
-            extension (str, optional): Optional extension to append to file
-                when saving.
 
         Returns:
             HashAddress: File's hash address.
@@ -64,23 +61,26 @@ class HashFS(object):
 
         with closing(stream):
             id = self.computehash(stream)
-            filepath, is_duplicate = self._copy(stream, id, extension)
+            filepath, is_duplicate = self._copy(stream, id)
 
-        return HashAddress(id, self.relpath(filepath), filepath, is_duplicate)
+        return HashAddress(id, self, filepath, is_duplicate)
 
-    def _copy(self, stream, id, extension=None):
-        """Copy the contents of `stream` onto disk with an optional file
-        extension appended. The copy process uses a temporary file to store the
-        initial contents and then moves that file to it's final location.
+    def _copy(self, stream, id):
+        """Copy the contents of `stream` onto disk. The copy process uses a
+        temporary file to store the initial contents and then moves that file
+        to it's final location.
         """
-        filepath = self.idpath(id, extension)
+        filepath = self.idpath(id)
 
         if not os.path.isfile(filepath):
             # Only move file if it doesn't already exist.
             is_duplicate = False
             fname = self._mktempfile(stream)
-            self.makepath(os.path.dirname(filepath))
-            shutil.move(fname, filepath)
+            try:
+                shutil.move(fname, filepath)
+            except FileNotFoundError:
+                self.makepath(os.path.dirname(filepath))
+                shutil.move(fname, filepath)
         else:
             is_duplicate = True
 
@@ -107,61 +107,54 @@ class HashFS(object):
 
         return tmp.name
 
-    def get(self, file):
-        """Return :class:`HashAdress` from given id or path. If `file` does not
+    def get(self, id):
+        """Return :class:`HashAdress` from given id. If `id` does not
         refer to a valid file, then ``None`` is returned.
 
         Args:
-            file (str): Address ID or path of file.
+            id (str): Address ID.
 
         Returns:
             HashAddress: File's hash address.
+
+        Raises:
+            FileNotFoundError: If file doesn't exist.
         """
-        realpath = self.realpath(file)
+        realpath = self.idpath(id)
 
-        if realpath is None:
-            return None
+        if os.path.isfile(realpath):
+            return HashAddress(id, self, realpath)  # todo
         else:
-            return HashAddress(self.unshard(realpath),
-                               self.relpath(realpath),
-                               realpath)
+            raise FileNotFoundError
 
-    def open(self, file, mode='rb'):
-        """Return open buffer object from given id or path.
+    def open(self, id, mode='rb'):
+        """Return open buffer object from given id.
 
         Args:
-            file (str): Address ID or path of file.
+            id (str): Address ID.
             mode (str, optional): Mode to open file in. Defaults to ``'rb'``.
 
         Returns:
             Buffer: An ``io`` buffer dependent on the `mode`.
 
         Raises:
-            IOError: If file doesn't exist.
+            FileNotFoundError: If file doesn't exist.
         """
-        realpath = self.realpath(file)
-        if realpath is None:
-            raise IOError('Could not locate file: {0}'.format(file))
-
+        realpath = self.idpath(id)
         return io.open(realpath, mode)
 
-    def delete(self, file):
-        """Delete file using id or path. Remove any empty directories after
-        deleting. No exception is raised if file doesn't exist.
+    def delete(self, id):
+        """Delete file using id. Remove any empty directories after deleting.
 
         Args:
-            file (str): Address ID or path of file.
-        """
-        realpath = self.realpath(file)
-        if realpath is None:
-            return
+            id (str): Address ID.
 
-        try:
-            os.remove(realpath)
-        except OSError:  # pragma: no cover
-            pass
-        else:
-            self.remove_empty(os.path.dirname(realpath))
+        Raises:
+            FileNotFoundError: If file doesn't exist.
+        """
+        realpath = self.idpath(id)
+        os.remove(realpath)
+        self.remove_empty(os.path.dirname(realpath))
 
     def remove_empty(self, subpath):
         """Successively remove all empty folders starting with `subpath` and
@@ -174,7 +167,7 @@ class HashFS(object):
             return
 
         while subpath != self.root:
-            if len(os.listdir(subpath)) > 0 or os.path.islink(subpath):
+            if os.listdir(subpath) or os.path.islink(subpath):
                 break
             os.rmdir(subpath)
             subpath = os.path.dirname(subpath)
@@ -214,9 +207,9 @@ class HashFS(object):
 
         return total
 
-    def exists(self, file):
-        """Check whether a given file id or path exists on disk."""
-        return bool(self.realpath(file))
+    def exists(self, id):
+        """Check whether a given file id exists on disk."""
+        return os.path.isfile(self.idpath(id))
 
     def haspath(self, path):
         """Return whether `path` is a subdirectory of the :attr:`root`
@@ -236,46 +229,28 @@ class HashFS(object):
         """Return `path` relative to the :attr:`root` directory."""
         return os.path.relpath(path, self.root)
 
-    def realpath(self, file):
-        """Attempt to determine the real path of a file id or path through
-        successive checking of candidate paths. If the real path is stored with
-        an extension, the path is considered a match if the basename matches
-        the expected file path of the id.
+    def idpath(self, id):
+        """Build the file path for a given hash id.
+
+        Args:
+            id (str): Address ID.
+
+        Returns:
+            path: An absolute file path.
+
+        Raises:
+            ValueError: If the ID is the wrong length or not hex.
         """
-        # Check for absoluate path.
-        if os.path.isfile(file):
-            return file
-
-        # Check for relative path.
-        relpath = os.path.join(self.root, file)
-        if os.path.isfile(relpath):
-            return relpath
-
-        # Check for sharded path.
-        filepath = self.idpath(file)
-        if os.path.isfile(filepath):
-            return filepath
-
-        # Check for sharded path with any extension.
-        paths = glob.glob('{0}.*'.format(filepath))
-        if paths:
-            return paths[0]
-
-        # Could not determine a match.
-        return None
-
-    def idpath(self, id, extension=''):
-        """Build the file path for a given hash id. Optionally, append a
-        file extension.
-        """
+        if len(id) != self.digestlen:
+            raise ValueError('Invalid ID: "{0}" is not {1} digits '
+                             'long'.format(id, self.digestlen))
+        try:
+            int(id, 16)
+        except ValueError:
+            raise ValueError('Invalid ID: "{0}" '
+                             'is not hex'.format(id))
         paths = self.shard(id)
-
-        if extension and not extension.startswith(os.extsep):
-            extension = os.extsep + extension
-        elif not extension:
-            extension = ''
-
-        return os.path.join(self.root, *paths) + extension
+        return os.path.join(self.root, *paths)
 
     def computehash(self, stream):
         """Compute hash of file using :attr:`algorithm`."""
@@ -295,14 +270,14 @@ class HashFS(object):
                               'a subdirectory of the root directory "{1}"'
                               .format(path, self.root)))
 
-        return os.path.splitext(self.relpath(path))[0].replace(os.sep, '')
+        return path.split(os.sep)[-1]
 
-    def repair(self, extensions=True):
+    def repair(self):
         """Repair any file locations whose content address doesn't match it's
         file path.
         """
         repaired = []
-        corrupted = tuple(self.corrupted(extensions=extensions))
+        corrupted = tuple(self.corrupted())
         oldmask = os.umask(0)
 
         try:
@@ -322,7 +297,7 @@ class HashFS(object):
 
         return repaired
 
-    def corrupted(self, extensions=True):
+    def corrupted(self):
         """Return generator that yields corrupted files as ``(path, address)``
         where ``path`` is the path of the corrupted file and ``address`` is
         the :class:`HashAddress` of the expected location.
@@ -333,19 +308,16 @@ class HashFS(object):
             with closing(stream):
                 id = self.computehash(stream)
 
-            extension = os.path.splitext(path)[1] if extensions else None
-            expected_path = self.idpath(id, extension)
+            expected_path = self.idpath(id)
 
             if expected_path != path:
-                yield (path, HashAddress(id,
-                                         self.relpath(expected_path),
-                                         expected_path))
+                yield (path, HashAddress(id, self, expected_path))
 
-    def __contains__(self, file):
-        """Return whether a given file id or path is contained in the
-        :attr:`root` directory.
+    def __contains__(self, id):
+        """Return whether a given file id is contained in the :attr:`root`
+        directory.
         """
-        return self.exists(file)
+        return self.exists(id)
 
     def __iter__(self):
         """Iterate over all files in the :attr:`root` directory."""
@@ -358,23 +330,26 @@ class HashFS(object):
 
 
 class HashAddress(namedtuple('HashAddress',
-                             ['id', 'relpath', 'abspath', 'is_duplicate'])):
+                             ['id', 'fs', 'abspath', 'is_duplicate'])):
     """File address containing file's path on disk and it's content hash ID.
 
     Attributes:
         id (str): Hash ID (hexdigest) of file contents.
-        relpath (str): Relative path location to :attr:`HashFS.root`.
+        fs (obj): ``HashFs`` object.
         abspath (str): Absoluate path location of file on disk.
         is_duplicate (boolean, optional): Whether the hash address created was
             a duplicate of a previously existing file. Can only be ``True``
             after a put operation. Defaults to ``False``.
     """
-    def __new__(cls, id, relpath, abspath, is_duplicate=False):
+    def __new__(cls, id, fs, abspath, is_duplicate=False):
         return super(HashAddress, cls).__new__(cls,
                                                id,
-                                               relpath,
+                                               fs,
                                                abspath,
                                                is_duplicate)
+
+    def __init__(self, id, fs, abspath, is_duplicate=False):
+        self.relpath = fs.relpath(self.abspath)
 
 
 class Stream(object):
