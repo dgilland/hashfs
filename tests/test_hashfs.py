@@ -13,25 +13,25 @@ from hashfs._compat import to_bytes
 
 @pytest.fixture
 def testpath(tmpdir):
-    return tmpdir.mkdir('hashfs')
+    return tmpdir.mkdir("hashfs")
 
 
 @pytest.fixture
 def testfile(testpath):
-    return testpath.join('hashfs.txt')
+    return testpath.join("hashfs.txt")
 
 
 @pytest.fixture
 def stringio():
-    return StringIO(u'foo')
+    return StringIO(u"foo")
 
 
 @pytest.yield_fixture
 def fileio(testfile):
-    with open(str(testfile), 'wb') as io:
-        io.write(b'foo')
+    with open(str(testfile), "wb") as io:
+        io.write(b"foo")
 
-    io = open(str(testfile), 'rb')
+    io = open(str(testfile), "rb")
 
     yield io
 
@@ -40,7 +40,7 @@ def fileio(testfile):
 
 @pytest.fixture
 def filepath(testfile):
-    testfile.write(b'foo')
+    testfile.write(b"foo")
     return testfile
 
 
@@ -50,9 +50,10 @@ def fs(testpath):
 
 
 def put_range(fs, count):
-    return dict((address.abspath, address)
-                for address in (fs.put(StringIO(u'{0}'.format(i)))
-                                for i in range(count)))
+    return dict(
+        (address.abspath, address)
+        for address in (fs.put(StringIO(u"{0}".format(i))) for i in range(count))
+    )
 
 
 def assert_file_put(fs, address):
@@ -62,7 +63,7 @@ def assert_file_put(fs, address):
     assert address.abspath in tuple(py.path.local(fs.root).visit())
     assert fs.exists(address.id)
 
-    id = os.path.splitext(address.relpath.replace(os.path.sep, ''))[0]
+    id = os.path.splitext(address.relpath.replace(os.path.sep, ""))[0]
     assert id == address.id
 
     assert len(dir_parts) == fs.depth
@@ -74,7 +75,7 @@ def test_hashfs_put_stringio(fs, stringio):
 
     assert_file_put(fs, address)
 
-    with open(address.abspath, 'rb') as fileobj:
+    with open(address.abspath, "rb") as fileobj:
         assert fileobj.read() == to_bytes(stringio.getvalue())
 
 
@@ -83,7 +84,7 @@ def test_hashfs_put_fileobj(fs, fileio):
 
     assert_file_put(fs, address)
 
-    with open(address.abspath, 'rb') as fileobj:
+    with open(address.abspath, "rb") as fileobj:
         assert fileobj.read() == fileio.read()
 
 
@@ -92,7 +93,7 @@ def test_hashfs_put_file(fs, filepath):
 
     assert_file_put(fs, address)
 
-    with open(address.abspath, 'rb') as fileobj:
+    with open(address.abspath, "rb") as fileobj:
         assert fileobj.read() == to_bytes(filepath.read())
 
 
@@ -104,12 +105,7 @@ def test_hashfs_put_duplicate(fs, stringio):
     assert address_b.is_duplicate
 
 
-@pytest.mark.parametrize('extension', [
-    'txt',
-    '.txt',
-    'md',
-    '.md'
-])
+@pytest.mark.parametrize("extension", ["txt", ".txt", "md", ".md"])
 def test_hashfs_put_extension(fs, stringio, extension):
     address = fs.put(stringio, extension)
 
@@ -121,7 +117,7 @@ def test_hashfs_put_extension(fs, stringio, extension):
 
 def test_hashfs_put_error(fs):
     with pytest.raises(ValueError):
-        fs.put('foo')
+        fs.put("foo")
 
 
 def test_hashfs_address(fs, stringio):
@@ -129,18 +125,21 @@ def test_hashfs_address(fs, stringio):
 
     assert fs.root not in address.relpath
     assert os.path.join(fs.root, address.relpath) == address.abspath
-    assert address.relpath.replace(os.sep, '') == address.id
+    assert address.relpath.replace(os.sep, "") == address.id
     assert not address.is_duplicate
 
 
-@pytest.mark.parametrize('extension,address_attr', [
-    ('', 'id'),
-    ('.txt', 'id'),
-    ('txt', 'id'),
-    ('', 'abspath'),
-    ('.txt', 'abspath'),
-    ('txt', 'abspath'),
-])
+@pytest.mark.parametrize(
+    "extension,address_attr",
+    [
+        ("", "id"),
+        (".txt", "id"),
+        ("txt", "id"),
+        ("", "abspath"),
+        (".txt", "abspath"),
+        ("txt", "abspath"),
+    ],
+)
 def test_hashfs_open(fs, stringio, extension, address_attr):
     address = fs.put(stringio, extension)
 
@@ -154,7 +153,7 @@ def test_hashfs_open(fs, stringio, extension, address_attr):
 
 def test_hashfs_open_error(fs):
     with pytest.raises(IOError):
-        fs.open('invalid')
+        fs.open("invalid")
 
 
 def test_hashfs_exists(fs, stringio):
@@ -180,13 +179,10 @@ def test_hashfs_get(fs, stringio):
     assert fs.get(address.id) == address
     assert fs.get(address.relpath) == address
     assert fs.get(address.abspath) == address
-    assert fs.get('invalid') is None
+    assert fs.get("invalid") is None
 
 
-@pytest.mark.parametrize('address_attr', [
-    'id',
-    'abspath',
-])
+@pytest.mark.parametrize("address_attr", ["id", "abspath"])
 def test_hashfs_delete(fs, stringio, address_attr):
     address = fs.put(stringio)
 
@@ -195,13 +191,13 @@ def test_hashfs_delete(fs, stringio, address_attr):
 
 
 def test_hashfs_delete_error(fs):
-    fs.delete('invalid')
+    fs.delete("invalid")
 
 
 def test_hashfs_remove_empty(fs):
-    subpath1 = os.path.join(fs.root, '1', '2', '3')
-    subpath2 = os.path.join(fs.root, '1', '4', '5')
-    subpath3 = os.path.join(fs.root, '6', '7', '8')
+    subpath1 = os.path.join(fs.root, "1", "2", "3")
+    subpath2 = os.path.join(fs.root, "1", "4", "5")
+    subpath3 = os.path.join(fs.root, "6", "7", "8")
 
     fs.makepath(subpath1)
     fs.makepath(subpath2)
@@ -224,7 +220,7 @@ def test_hashfs_remove_empty_subdir(fs):
 
     assert os.path.exists(fs.root)
 
-    fs.remove_empty(os.path.realpath(os.path.join(fs.root, '..')))
+    fs.remove_empty(os.path.realpath(os.path.join(fs.root, "..")))
 
     assert os.path.exists(fs.root)
 
@@ -236,7 +232,7 @@ def test_hashfs_unshard(fs, stringio):
 
 def test_hashfs_unshard_error(fs):
     with pytest.raises(ValueError):
-        fs.unshard('invalid')
+        fs.unshard("invalid")
 
 
 def test_hashfs_repair(fs, stringio):
@@ -322,8 +318,8 @@ def test_hashfs_folders(fs):
 
 
 def test_hashfs_size(fs):
-    fs.put(StringIO(u'{0}'.format(string.ascii_lowercase)))
-    fs.put(StringIO(u'{0}'.format(string.ascii_uppercase)))
+    fs.put(StringIO(u"{0}".format(string.ascii_lowercase)))
+    fs.put(StringIO(u"{0}".format(string.ascii_uppercase)))
     expected = len(string.ascii_lowercase) + len(string.ascii_uppercase)
 
     assert fs.size() == expected

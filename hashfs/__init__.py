@@ -17,10 +17,10 @@ from .__meta__ import (
     __version__,
     __author__,
     __email__,
-    __license__
+    __license__,
 )
 
 from .hashfs import HashFS, HashAddress
 
 
-__all__ = ('HashFS', 'HashAddress')
+__all__ = ("HashFS", "HashAddress")

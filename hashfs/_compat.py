@@ -15,6 +15,7 @@ except ImportError:
     except ImportError:
         # Back ported package not installed so fallback to baseline.
         from os import walk
+
         scandir = None
 
 
@@ -28,8 +29,10 @@ if PY3:
 
     def to_bytes(text):
         if not isinstance(text, bytes):
-            text = bytes(text, 'utf8')
+            text = bytes(text, "utf8")
         return text
+
+
 else:
     text_type = unicode
     string_types = (str, unicode)

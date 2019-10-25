@@ -34,13 +34,10 @@ class HashFS(object):
             subdirectories. Defaults to ``0o755`` which allows owner/group to
             read/write and everyone else to read and everyone to execute.
     """
-    def __init__(self,
-                 root,
-                 depth=4,
-                 width=1,
-                 algorithm='sha256',
-                 fmode=0o664,
-                 dmode=0o755):
+
+    def __init__(
+        self, root, depth=4, width=1, algorithm="sha256", fmode=0o664, dmode=0o755
+    ):
         self.root = os.path.realpath(root)
         self.depth = depth
         self.width = width
@@ -122,11 +119,9 @@ class HashFS(object):
         if realpath is None:
             return None
         else:
-            return HashAddress(self.unshard(realpath),
-                               self.relpath(realpath),
-                               realpath)
+            return HashAddress(self.unshard(realpath), self.relpath(realpath), realpath)
 
-    def open(self, file, mode='rb'):
+    def open(self, file, mode="rb"):
         """Return open buffer object from given id or path.
 
         Args:
@@ -141,7 +136,7 @@ class HashFS(object):
         """
         realpath = self.realpath(file)
         if realpath is None:
-            raise IOError('Could not locate file: {0}'.format(file))
+            raise IOError("Could not locate file: {0}".format(file))
 
         return io.open(realpath, mode)
 
@@ -229,8 +224,7 @@ class HashFS(object):
         try:
             os.makedirs(path, self.dmode)
         except FileExistsError:
-            assert os.path.isdir(path),\
-                'expected {} to be a directory'.format(path)
+            assert os.path.isdir(path), "expected {} to be a directory".format(path)
 
     def relpath(self, path):
         """Return `path` relative to the :attr:`root` directory."""
@@ -257,14 +251,14 @@ class HashFS(object):
             return filepath
 
         # Check for sharded path with any extension.
-        paths = glob.glob('{0}.*'.format(filepath))
+        paths = glob.glob("{0}.*".format(filepath))
         if paths:
             return paths[0]
 
         # Could not determine a match.
         return None
 
-    def idpath(self, id, extension=''):
+    def idpath(self, id, extension=""):
         """Build the file path for a given hash id. Optionally, append a
         file extension.
         """
@@ -273,7 +267,7 @@ class HashFS(object):
         if extension and not extension.startswith(os.extsep):
             extension = os.extsep + extension
         elif not extension:
-            extension = ''
+            extension = ""
 
         return os.path.join(self.root, *paths) + extension
 
@@ -291,11 +285,12 @@ class HashFS(object):
     def unshard(self, path):
         """Unshard path to determine hash value."""
         if not self.haspath(path):
-            raise ValueError(('Cannot unshard path. The path "{0}" is not '
-                              'a subdirectory of the root directory "{1}"'
-                              .format(path, self.root)))
+            raise ValueError(
+                "Cannot unshard path. The path {0!r} is not "
+                "a subdirectory of the root directory {1!r}".format(path, self.root)
+            )
 
-        return os.path.splitext(self.relpath(path))[0].replace(os.sep, '')
+        return os.path.splitext(self.relpath(path))[0].replace(os.sep, "")
 
     def repair(self, extensions=True):
         """Repair any file locations whose content address doesn't match it's
@@ -337,9 +332,10 @@ class HashFS(object):
             expected_path = self.idpath(id, extension)
 
             if expected_path != path:
-                yield (path, HashAddress(id,
-                                         self.relpath(expected_path),
-                                         expected_path))
+                yield (
+                    path,
+                    HashAddress(id, self.relpath(expected_path), expected_path),
+                )
 
     def __contains__(self, file):
         """Return whether a given file id or path is contained in the
@@ -357,8 +353,9 @@ class HashFS(object):
         return self.count()
 
 
-class HashAddress(namedtuple('HashAddress',
-                             ['id', 'relpath', 'abspath', 'is_duplicate'])):
+class HashAddress(
+    namedtuple("HashAddress", ["id", "relpath", "abspath", "is_duplicate"])
+):
     """File address containing file's path on disk and it's content hash ID.
 
     Attributes:
@@ -369,12 +366,9 @@ class HashAddress(namedtuple('HashAddress',
             a duplicate of a previously existing file. Can only be ``True``
             after a put operation. Defaults to ``False``.
     """
+
     def __new__(cls, id, relpath, abspath, is_duplicate=False):
-        return super(HashAddress, cls).__new__(cls,
-                                               id,
-                                               relpath,
-                                               abspath,
-                                               is_duplicate)
+        return super(HashAddress, cls).__new__(cls, id, relpath, abspath, is_duplicate)
 
 
 class Stream(object):
@@ -390,15 +384,17 @@ class Stream(object):
     Successive readings of the stream is supported without having to manually
     set it's position back to ``0``.
     """
+
     def __init__(self, obj):
-        if hasattr(obj, 'read'):
+        if hasattr(obj, "read"):
             pos = obj.tell()
         elif os.path.isfile(obj):
-            obj = io.open(obj, 'rb')
+            obj = io.open(obj, "rb")
             pos = None
         else:
-            raise ValueError(('Object must be a valid file path or '
-                              'a readable object.'))
+            raise ValueError(
+                "Object must be a valid file path or " "a readable object."
+            )
 
         self._obj = obj
         self._pos = pos
