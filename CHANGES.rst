@@ -2,6 +2,9 @@ Changelog
 =========
 
 
+v0.7.2 (2019-10-24)
+-------------------
+
 - Fix out-of-memory issue when computing file ID hashes of large files.
 
 
