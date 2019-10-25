@@ -392,12 +392,17 @@ class Stream(object):
             obj = io.open(obj, "rb")
             pos = None
         else:
-            raise ValueError(
-                "Object must be a valid file path or " "a readable object."
-            )
+            raise ValueError("Object must be a valid file path or a readable object")
+
+        try:
+            file_stat = os.stat(obj.name)
+            buffer_size = file_stat.st_blksize
+        except Exception:
+            buffer_size = 8192
 
         self._obj = obj
         self._pos = pos
+        self._buffer_size = buffer_size
 
     def __iter__(self):
         """Read underlying IO object and yield results. Return object to
@@ -406,7 +411,7 @@ class Stream(object):
         self._obj.seek(0)
 
         while True:
-            data = self._obj.read()
+            data = self._obj.read(self._buffer_size)
 
             if not data:
                 break
