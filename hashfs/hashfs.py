@@ -2,10 +2,9 @@
 """
 
 from collections import namedtuple
-from contextlib import contextmanager, closing
+from contextlib import closing
 import glob
 import hashlib
-import sys
 import io
 import os
 import shutil
@@ -35,9 +34,15 @@ class HashFS(object):
             read/write and everyone else to read and everyone to execute.
     """
 
-    def __init__(
-        self, root, depth=4, width=1, algorithm="sha256", fmode=0o664, dmode=0o755
-    ):
+    def __init__(self,
+                 root,
+                 depth=4,
+                 width=1,
+                 algorithm="sha256",
+                 fmode=0o664,
+                 dmode=0o755):
+
+        # This needs a little update... we don't want to store a STRING.
         self.root = os.path.realpath(root)
         self.depth = depth
         self.width = width
@@ -119,7 +124,8 @@ class HashFS(object):
         if realpath is None:
             return None
         else:
-            return HashAddress(self.unshard(realpath), self.relpath(realpath), realpath)
+            return HashAddress(self.unshard(realpath), self.relpath(realpath),
+                               realpath)
 
     def open(self, file, mode="rb"):
         """Return open buffer object from given id or path.
@@ -224,7 +230,8 @@ class HashFS(object):
         try:
             os.makedirs(path, self.dmode)
         except FileExistsError:
-            assert os.path.isdir(path), "expected {} to be a directory".format(path)
+            assert os.path.isdir(path), "expected {} to be a directory".format(
+                path)
 
     def relpath(self, path):
         """Return `path` relative to the :attr:`root` directory."""
@@ -287,8 +294,8 @@ class HashFS(object):
         if not self.haspath(path):
             raise ValueError(
                 "Cannot unshard path. The path {0!r} is not "
-                "a subdirectory of the root directory {1!r}".format(path, self.root)
-            )
+                "a subdirectory of the root directory {1!r}".format(
+                    path, self.root))
 
         return os.path.splitext(self.relpath(path))[0].replace(os.sep, "")
 
@@ -354,8 +361,8 @@ class HashFS(object):
 
 
 class HashAddress(
-    namedtuple("HashAddress", ["id", "relpath", "abspath", "is_duplicate"])
-):
+        namedtuple("HashAddress",
+                   ["id", "relpath", "abspath", "is_duplicate"])):
     """File address containing file's path on disk and it's content hash ID.
 
     Attributes:
@@ -368,7 +375,8 @@ class HashAddress(
     """
 
     def __new__(cls, id, relpath, abspath, is_duplicate=False):
-        return super(HashAddress, cls).__new__(cls, id, relpath, abspath, is_duplicate)
+        return super(HashAddress, cls).__new__(cls, id, relpath, abspath,
+                                               is_duplicate)
 
 
 class Stream(object):
@@ -392,7 +400,8 @@ class Stream(object):
             obj = io.open(obj, "rb")
             pos = None
         else:
-            raise ValueError("Object must be a valid file path or a readable object")
+            raise ValueError(
+                "Object must be a valid file path or a readable object")
 
         try:
             file_stat = os.stat(obj.name)
