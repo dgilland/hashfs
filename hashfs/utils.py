@@ -8,6 +8,7 @@ def compact(items):
     return [item for item in items if item]
 
 
+# TODO re-implement this for pyfilesystem...
 def issubdir(subpath, path):
     """Return whether `subpath` is a sub-directory of `path`."""
     # Append os.sep so that paths like /usr/var2/log doesn't match /usr/var.
@@ -19,7 +20,6 @@ def issubdir(subpath, path):
 def shard(digest, depth, width):
     # This creates a list of `depth` number of tokens with width
     # `width` from the first part of the id plus the remainder.
-    return compact(
-        [digest[i * width : width * (i + 1)] for i in range(depth)]
-        + [digest[depth * width :]]
-    )
+    first = [digest[i * width:width * (i + 1)] for i in range(depth)]
+    remaining = [digest[depth * width:]]
+    return compact(first + remaining)

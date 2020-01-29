@@ -1,17 +1,19 @@
 """Module for HashFS class.
 """
 
-from collections import namedtuple
-from contextlib import closing
 import glob
 import hashlib
 import io
 import os
 import shutil
+from collections import namedtuple
+from contextlib import closing
 from tempfile import NamedTemporaryFile
 
+import fs as pyfs
+
+from ._compat import FileExistsError, to_bytes
 from .utils import issubdir, shard
-from ._compat import to_bytes, walk, FileExistsError
 
 
 class HashFS(object):
@@ -42,8 +44,19 @@ class HashFS(object):
                  fmode=0o664,
                  dmode=0o755):
 
-        # This needs a little update... we don't want to store a STRING.
-        self.root = os.path.realpath(root)
+        self.abs_fs = pyfs.open_fs("/")
+
+        if isinstance(root, str):
+            self.fs = pyfs.open_fs(root)
+        elif isinstance(root, pyfs.base.FS):
+            self.fs = root
+
+        # TODO this will NOT work with in-memory etc!
+        if hasattr(self.fs, 'root_path'):
+            self.root = self.fs.root_path
+        else:
+            self.root = None
+
         self.depth = depth
         self.width = width
         self.algorithm = algorithm
@@ -77,12 +90,12 @@ class HashFS(object):
         """
         filepath = self.idpath(id, extension)
 
-        if not os.path.isfile(filepath):
+        if not self.abs_fs.isfile(filepath):
             # Only move file if it doesn't already exist.
             is_duplicate = False
             fname = self._mktempfile(stream)
-            self.makepath(os.path.dirname(filepath))
-            shutil.move(fname, filepath)
+            self.makepath(pyfs.path.dirname(filepath))
+            self.abs_fs.move(fname, filepath)
         else:
             is_duplicate = True
 
@@ -164,6 +177,7 @@ class HashFS(object):
         else:
             self.remove_empty(os.path.dirname(realpath))
 
+    # TODO this uses root.
     def remove_empty(self, subpath):
         """Successively remove all empty folders starting with `subpath` and
         proceeding "up" through directory tree until reaching the :attr:`root`
@@ -174,7 +188,7 @@ class HashFS(object):
         if not self.haspath(subpath):
             return
 
-        while subpath != self.root:
+        while subpath != self.fs.root_path:
             if len(os.listdir(subpath)) > 0 or os.path.islink(subpath):
                 break
             os.rmdir(subpath)
@@ -184,18 +198,20 @@ class HashFS(object):
         """Return generator that yields all files in the :attr:`root`
         directory.
         """
-        for folder, subfolders, files in walk(self.root):
-            for file in files:
-                yield os.path.abspath(os.path.join(folder, file))
+        for f in self.fs.walk.files():
+            # TODO why do I care?
+            yield self.fs.getsyspath(f)
 
     def folders(self):
         """Return generator that yields all folders in the :attr:`root`
         directory that contain files.
         """
-        for folder, subfolders, files in walk(self.root):
-            if files:
-                yield folder
+        for step in self.fs.walk():
+            if step.files:
+                # TODO why do we care here??
+                yield self.fs.getsyspath(step.path)
 
+    # TODO make this work too.
     def count(self):
         """Return count of the number of files in the :attr:`root` directory.
         """
@@ -210,8 +226,10 @@ class HashFS(object):
         """
         total = 0
 
-        for path in self.files():
-            total += os.path.getsize(path)
+        # TODO here we're using relative paths, since that's what the fs cares
+        # about.
+        for path in self.fs.walk.files():
+            total += self.fs.getsize(path)
 
         return total
 
@@ -223,19 +241,22 @@ class HashFS(object):
         """Return whether `path` is a subdirectory of the :attr:`root`
         directory.
         """
-        return issubdir(path, self.root)
+        return issubdir(path, self.fs.root_path)
 
     def makepath(self, path):
         """Physically create the folder path on disk."""
         try:
-            os.makedirs(path, self.dmode)
+            # this is creating a directory, so we use fmode here.
+            perms = pyfs.permissions.Permissions(mode=self.dmode)
+            self.abs_fs.makedirs(path, permissions=perms, recreate=True)
+        # TODO this may not happen anymore!
         except FileExistsError:
-            assert os.path.isdir(path), "expected {} to be a directory".format(
-                path)
+            assert self.abs_fs.isdir(
+                path), "expected {} to be a directory".format(path)
 
     def relpath(self, path):
         """Return `path` relative to the :attr:`root` directory."""
-        return os.path.relpath(path, self.root)
+        return pyfs.path.relativefrom(self.fs.root_path, path)
 
     def realpath(self, file):
         """Attempt to determine the real path of a file id or path through
@@ -243,18 +264,18 @@ class HashFS(object):
         an extension, the path is considered a match if the basename matches
         the expected file path of the id.
         """
-        # Check for absoluate path.
-        if os.path.isfile(file):
+        # Check for absolute path.
+        if self.abs_fs.isfile(file):
             return file
 
         # Check for relative path.
-        relpath = os.path.join(self.root, file)
-        if os.path.isfile(relpath):
+        relpath = pyfs.path.combine(self.fs.root_path, file)
+        if self.abs_fs.isfile(relpath):
             return relpath
 
         # Check for sharded path.
         filepath = self.idpath(file)
-        if os.path.isfile(filepath):
+        if self.abs_fs.isfile(filepath):
             return filepath
 
         # Check for sharded path with any extension.
@@ -276,7 +297,7 @@ class HashFS(object):
         elif not extension:
             extension = ""
 
-        return os.path.join(self.root, *paths) + extension
+        return pyfs.path.join(self.fs.root_path, *paths) + extension
 
     def computehash(self, stream):
         """Compute hash of file using :attr:`algorithm`."""
@@ -295,7 +316,7 @@ class HashFS(object):
             raise ValueError(
                 "Cannot unshard path. The path {0!r} is not "
                 "a subdirectory of the root directory {1!r}".format(
-                    path, self.root))
+                    path, self.fs.root_path))
 
         return os.path.splitext(self.relpath(path))[0].replace(os.sep, "")
 
@@ -309,7 +330,7 @@ class HashFS(object):
 
         try:
             for path, address in corrupted:
-                if os.path.isfile(address.abspath):
+                if self.abs_fs.isfile(address.abspath):
                     # File already exists so just delete corrupted path.
                     os.remove(path)
                 else:
@@ -368,7 +389,7 @@ class HashAddress(
     Attributes:
         id (str): Hash ID (hexdigest) of file contents.
         relpath (str): Relative path location to :attr:`HashFS.root`.
-        abspath (str): Absoluate path location of file on disk.
+        abspath (str): Absolute path location of file on disk.
         is_duplicate (boolean, optional): Whether the hash address created was
             a duplicate of a previously existing file. Can only be ``True``
             after a put operation. Defaults to ``False``.

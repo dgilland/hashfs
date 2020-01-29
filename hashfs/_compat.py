@@ -7,20 +7,16 @@ import sys
 
 try:
     # Python >= 3.5.
-    from os import scandir, walk
+    from os import scandir
 except ImportError:
     try:
         # Back ported scandir package.
-        from scandir import scandir, walk
+        from scandir import scandir
     except ImportError:
         # Back ported package not installed so fallback to baseline.
-        from os import walk
-
         scandir = None
 
-
 PY3 = sys.version_info[0] == 3
-
 
 if PY3:
     text_type = str
@@ -31,7 +27,6 @@ if PY3:
         if not isinstance(text, bytes):
             text = bytes(text, "utf8")
         return text
-
 
 else:
     text_type = unicode
