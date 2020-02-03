@@ -7,7 +7,7 @@ from contextlib import closing
 from typing import Iterable, Optional, Tuple, Union
 
 import fs as pyfs
-import hashfs.util as u
+import hashfs.utils as u
 from fs.permissions import Permissions
 
 Key = Union[str, u.HashAddress]
@@ -46,12 +46,13 @@ class HashFS(object):
         self.algorithm = algorithm
         self.dmode = dmode
 
-    def put(self, content) -> u.HashAddress:
+    def put(self, content, extension: Optional[str] = None) -> u.HashAddress:
         """Store contents of `content` in the backing filesystem using its content hash
     for the address.
 
     Args:
       content: Readable object or path to file.
+      extension: Optional extension to append to file when saving.
 
     Returns:
       File's hash address.
@@ -59,7 +60,7 @@ class HashFS(object):
     """
         with closing(u.Stream(content, fs=self.fs)) as stream:
             hashid = self._computehash(stream)
-            path, is_duplicate = self._copy(stream, hashid)
+            path, is_duplicate = self._copy(stream, hashid, extension)
 
         return u.HashAddress(hashid, path, is_duplicate)
 
@@ -152,12 +153,12 @@ class HashFS(object):
         """Check whether a given file id or path exists on disk."""
         return bool(self._fs_path(k))
 
-    def repair(self) -> Iterable[str]:
+    def repair(self, extensions: bool = True) -> Iterable[str]:
         """Repair any file locations whose content address doesn't match it's
         file path.
         """
         repaired = []
-        corrupted = self._corrupted()
+        corrupted = self._corrupted(extensions=extensions)
 
         for path, address in corrupted:
             if self.fs.isfile(path):
@@ -197,8 +198,12 @@ class HashFS(object):
         """Compute hash of file using :attr:`algorithm`."""
         return u.computehash(stream, self.algorithm)
 
-    def _copy(self, stream: u.Stream, hashid: str):
-        """Copy the contents of `stream` onto disk.
+    def _copy(self,
+              stream: u.Stream,
+              hashid: str,
+              extension: Optional[str] = None):
+        """Copy the contents of `stream` onto disk with an optional file extension
+        appended.
 
         Returns a pair of
 
@@ -206,7 +211,7 @@ class HashFS(object):
         - boolean noting whether or not we have a duplicate.
 
         """
-        path = self._hashid_to_path(hashid)
+        path = self._hashid_to_path(hashid, extension)
 
         if self.fs.isfile(path):
             is_duplicate = True
@@ -246,7 +251,9 @@ class HashFS(object):
 
     def _fs_path(self, k: Union[str, u.HashAddress]) -> Optional[str]:
         """Attempt to determine the real path of a file id or path through successive
-    checking of candidate paths.
+    checking of candidate paths. If the real path is stored with an extension,
+    the path is considered a match if the basename matches 'the expected file
+    path of the id.
 
     """
         # if the input is ALREADY a hash address, pull out the relative path.
@@ -262,15 +269,28 @@ class HashFS(object):
         if self.fs.isfile(filepath):
             return filepath
 
+        # Check the generated filepath to see if any version of the path exist with
+        # some extension; return that if it exists..
+        paths = self.fs.glob("{0}.*".format(filepath))
+        if paths.count().files > 0:
+            return next(iter(paths)).path
+
         # Could not determine a match.
         return None
 
-    def _hashid_to_path(self, hashid: str) -> str:
-        """Build the relative file path for a given hash id.
+    def _hashid_to_path(self, hashid: str, extension: str = "") -> str:
+        """Build the relative file path for a given hash id. Optionally, append a file
+    extension.
 
     """
         paths = self._shard(hashid)
-        return pyfs.path.join(*paths)
+
+        if extension and not extension.startswith(os.extsep):
+            extension = os.extsep + extension
+        elif not extension:
+            extension = ""
+
+        return pyfs.path.join(*paths) + extension
 
     def _shard(self, hashid: str) -> str:
         """Shard content ID into subfolders."""
@@ -284,7 +304,8 @@ class HashFS(object):
 
         return pyfs.path.splitext(path)[0].replace(os.sep, "")
 
-    def _corrupted(self) -> Iterable[Tuple[str, u.HashAddress]]:
+    def _corrupted(self, extensions: bool = True
+                  ) -> Iterable[Tuple[str, u.HashAddress]]:
         """Return generator that yields corrupted files as ``(path, address)``, where
     ``path`` is the path of the corrupted file and ``address`` is the
     :class:`HashAddress` of the expected location.
@@ -294,7 +315,8 @@ class HashFS(object):
             with closing(u.Stream(path, fs=self.fs)) as stream:
                 hashid = self._computehash(stream)
 
-            expected_path = self._hashid_to_path(hashid)
+            extension = pyfs.path.splitext(path)[1] if extensions else None
+            expected_path = self._hashid_to_path(hashid, extension)
 
             if pyfs.path.abspath(expected_path) != pyfs.path.abspath(path):
                 yield (
