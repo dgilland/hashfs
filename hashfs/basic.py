@@ -2,58 +2,77 @@
 
 """
 
+from contextlib import closing
 from io import StringIO
 
 import fs
 from fs import memoryfs
 
-from hashfs import HashFS
-
-ROOT = '/Users/samritchie/.modeldb'
-# Set the `depth` to the number of subfolders the file's hash should be split
-# when saving. Set the `width` to the desired width of each subfolder.
-
-# With depth=4 and width=1, files will be saved in the following pattern:
-# temp_hashfs/a/b/c/d/efghijklmnopqrstuvwxyz
-
-# With depth=3 and width=2, files will be saved in the following pattern:
-# temp_hashfs/ab/cd/ef/ghijklmnopqrstuvwxyz
+from uv.hashfs import HashFS
 
 
-def persist(i):
+def persist(filesystem: fs.base.FS):
     """Add a docstring."""
-    myfs = fs.open_fs(ROOT)
-    memfs = fs.memoryfs.MemoryFS()
-    print(memfs.tree())
+    # Create our content addressable store.
+    f = HashFS(filesystem, depth=2, width=2, algorithm='sha256')
 
-    from io import BytesIO
-    some_content = BytesIO(b'some content')
+    # Create some content.
+    a = StringIO('a content')
+    b = StringIO('b content')
 
-    # This is how to write this shit out!
-    print(myfs.makedirs('/face/cake', recreate=True))
-    print(myfs.writefile('/face/cake/hammer', some_content))
-    print(memfs.tree())
-    print(myfs.tree())
+    # Put both in the filesystem.
+    ak = f.put(a)
+    bk = f.put(b)
 
-    filesystem = HashFS(memfs, depth=2, width=2, algorithm='sha256')
+    # You can get the key back out with various paths.
+    assert f.get(ak) == ak
+    assert f.get(ak.id) == ak
+    assert f.get(ak.relpath) == ak
 
-    # address = filesystem.put(some_content)
-    # print(address)
+    # Passing in junk results in junk.
+    assert f.get('random') == None
 
-    # more_content = StringIO('more content')
-    # address2 = filesystem.put(more_content)
+    rt_a = None
+    with closing(f.open(ak.id)) as a_file:
+        print("Reading a")
+        rt_a = a_file.read()
 
-    # for f in filesystem.folders():
-    #     print(f)
+    # the file yields its goodies!
+    assert rt_a == b'a content'
 
-    # print("and others...")
+    # What's in the FS?
+    filesystem.tree()
 
-    # print(list(filesystem.files()))
-    # print(list(filesystem.folders()))
+    # all files:
+    print(list(f.files()))
 
-    # print(address)
-    # print(address2)
+    # all folders:
+    print(list(f.folders()))
+
+    # total number of
+    print(f"{f.count()} files in the hashfs.")
+    print(f"{f.size()} bytes stored in the hashfs.")
+
+    f.delete(ak)
+    f.delete(bk)
+
+    print(f"{f.count()} files in the hashfs AFTER delete.")
+    print(f"{f.size()} bytes stored in the hashfs AFTER delete.")
+
+    print(f"Does the deleted file exist? {f.exists(ak)}")
+    f.repair()
+    filesystem.tree()
 
 
 if __name__ == '__main__':
-    persist(1)
+    # in-memory:
+
+    persist(memoryfs.MemoryFS())
+
+    # local
+    persist(fs.open_fs('~/.modeldb', create=True))
+
+    import os
+    bucket = os.environ.get("BUCKET_NAME")
+    gcsfs = fs.open_fs(f"gs://{bucket}/cas?strict=False")
+    persist(gcsfs)
