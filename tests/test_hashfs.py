@@ -63,7 +63,7 @@ def assert_file_put(fs, address):
     assert address.abspath in tuple(py.path.local(fs.root).visit())
     assert fs.exists(address.id)
 
-    id = os.path.splitext(address.relpath.replace(os.path.sep, ""))[0]
+    id = os.path.splitext(str(address.relpath).replace(os.path.sep, ""))[0]
     assert id == address.id
 
     assert len(dir_parts) == fs.depth
@@ -110,8 +110,8 @@ def test_hashfs_put_extension(fs, stringio, extension):
     address = fs.put(stringio, extension)
 
     assert_file_put(fs, address)
-    assert os.path.sep in address.abspath
-    assert os.path.splitext(address.abspath)[1].endswith(extension)
+    assert os.path.sep in str(address.abspath)
+    assert address.abspath.suffix.endswith(extension)
     assert not address.is_duplicate
 
 
@@ -124,8 +124,8 @@ def test_hashfs_address(fs, stringio):
     address = fs.put(stringio)
 
     assert str(fs.root) not in str(address.relpath)
-    assert os.path.join(fs.root, address.relpath) == address.abspath
-    assert address.relpath.replace(os.sep, "") == address.id
+    assert fs.root.joinpath(address.relpath) == address.abspath
+    assert str(address.relpath).replace(os.sep, "") == address.id
     assert not address.is_duplicate
 
 

@@ -1,7 +1,14 @@
 # -*- coding: utf-8 -*-
 
+
+"""
+common utils for hashfs
+"""
+
+
 import os
 from pathlib import Path
+from typing import List
 
 
 def compact(items):
@@ -17,7 +24,7 @@ def issubdir(subpath, path):
     return subpath.startswith(path)
 
 
-def shard(digest, depth, width):
+def shard(digest, depth, width) -> List[str]:
     # This creates a list of `depth` number of tokens with width
     # `width` from the first part of the id plus the remainder.
     return compact(
@@ -27,7 +34,8 @@ def shard(digest, depth, width):
 
 
 def create_hex_directory(directory: Path,
-                     width: int):
+                         width: int,
+                         mode: int):
     """
     create 16 ** width directories in the directory.
 
@@ -39,4 +47,4 @@ def create_hex_directory(directory: Path,
         sub_dir = directory.joinpath(
             f'{i:0{width}x}'
         )
-        sub_dir.mkdir(parents=True, exist_ok=True)
+        sub_dir.mkdir(parents=True, exist_ok=True, mode=mode)

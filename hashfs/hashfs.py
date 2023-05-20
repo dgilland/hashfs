@@ -5,6 +5,7 @@ from pathlib import Path
 
 from collections import namedtuple
 from contextlib import contextmanager, closing
+from dataclasses import dataclass
 import glob
 import hashlib
 import sys
@@ -61,7 +62,7 @@ class HashFS(object):
         if directory is None:
             directory = self.root
 
-        create_hex_directory(directory, self.width)
+        create_hex_directory(directory, self.width, self.dmode)
         for sub_directory in directory.iterdir():
             self.init_all_sub_directory(
                 sub_directory,
@@ -90,6 +91,24 @@ class HashFS(object):
             filepath, is_duplicate = self._copy(stream, hashid, extension)
 
         return HashAddress(hashid, self.relpath(filepath), filepath, is_duplicate)
+
+    def put_file(self, file_path: Path, hashid: str):
+        """
+        store the file_path with given hashid, skip the compute process
+        """
+        target = self.idpath(
+            hashid, extension=file_path.suffix)
+        if not self.sub_directory_created:
+            target.parent.mkdir(parents=True, exist_ok=True, mode=self.dmode)
+        result = HashAddress(
+            id=hashid, relpath=target.relative_to(self.root),
+            abspath=target,
+        )
+        if target.exists():
+            result.is_duplicate = True
+            return result
+        shutil.copyfile(file_path, target)
+        return result
 
     def _copy(self, stream, id, extension=None):
         """Copy the contents of `stream` onto disk with an optional file
@@ -208,7 +227,7 @@ class HashFS(object):
         """
         for folder, subfolders, files in walk(self.root):
             for file in files:
-                yield os.path.abspath(os.path.join(folder, file))
+                yield Path(folder, file).absolute()
 
     def folders(self):
         """Return generator that yields all folders in the :attr:`root`
@@ -216,7 +235,7 @@ class HashFS(object):
         """
         for folder, subfolders, files in walk(self.root):
             if files:
-                yield folder
+                yield Path(folder)
 
     def count(self):
         """Return count of the number of files in the :attr:`root` directory.
@@ -256,7 +275,7 @@ class HashFS(object):
 
     def relpath(self, path):
         """Return `path` relative to the :attr:`root` directory."""
-        return os.path.relpath(path, self.root)
+        return path.relative_to(self.root)
 
     def realpath(self, file):
         """Attempt to determine the real path of a file id or path through
@@ -265,17 +284,16 @@ class HashFS(object):
         the expected file path of the id.
         """
         # Check for absoluate path.
-        if os.path.isfile(file):
+        if Path(file).is_file():
             return file
 
         # Check for relative path.
-        relpath = os.path.join(self.root, file)
-        if os.path.isfile(relpath):
-            return relpath
+        if self.root.joinpath(file).is_file():
+            return self.root.joinpath(file)
 
         # Check for sharded path.
         filepath = self.idpath(file)
-        if os.path.isfile(filepath):
+        if filepath.is_file():
             return filepath
 
         # Check for sharded path with any extension.
@@ -297,7 +315,8 @@ class HashFS(object):
         elif not extension:
             extension = ""
 
-        return os.path.join(self.root, *paths) + extension
+        paths[-1] = paths[-1] + extension
+        return self.root.joinpath(*paths)
 
     def computehash(self, stream):
         """Compute hash of file using :attr:`algorithm`."""
@@ -382,22 +401,22 @@ class HashFS(object):
         return self.count()
 
 
-class HashAddress(
-    namedtuple("HashAddress", ["id", "relpath", "abspath", "is_duplicate"])
-):
+@dataclass
+class HashAddress:
     """File address containing file's path on disk and it's content hash ID.
 
     Attributes:
         id (str): Hash ID (hexdigest) of file contents.
-        relpath (str): Relative path location to :attr:`HashFS.root`.
-        abspath (str): Absoluate path location of file on disk.
+        relpath (Path): Relative path location to :attr:`HashFS.root`.
+        abspath (Path): Absoluate path location of file on disk.
         is_duplicate (boolean, optional): Whether the hash address created was
             a duplicate of a previously existing file. Can only be ``True``
             after a put operation. Defaults to ``False``.
     """
-
-    def __new__(cls, id, relpath, abspath, is_duplicate=False):
-        return super(HashAddress, cls).__new__(cls, id, relpath, abspath, is_duplicate)
+    id: str
+    relpath: Path
+    abspath: Path
+    is_duplicate: bool = False
 
 
 class Stream(object):
