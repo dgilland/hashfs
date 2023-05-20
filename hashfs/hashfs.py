@@ -1,6 +1,8 @@
 """Module for HashFS class.
 """
 
+from pathlib import Path
+
 from collections import namedtuple
 from contextlib import contextmanager, closing
 import glob
@@ -11,7 +13,7 @@ import os
 import shutil
 from tempfile import NamedTemporaryFile
 
-from .utils import issubdir, shard
+from .utils import issubdir, shard, create_hex_directory
 from ._compat import to_bytes, walk, FileExistsError
 
 
@@ -19,7 +21,7 @@ class HashFS(object):
     """Content addressable file manager.
 
     Attributes:
-        root (str): Directory path used as root of storage space.
+        root (Path): Directory path used as root of storage space.
         depth (int, optional): Depth of subfolders to create when saving a
             file.
         width (int, optional): Width of each subfolder to create when saving a
@@ -33,19 +35,41 @@ class HashFS(object):
         dmode (int, optional): Directory mode permission to set for
             subdirectories. Defaults to ``0o755`` which allows owner/group to
             read/write and everyone else to read and everyone to execute.
+        sub_directory_created: if True, on init, hashfs will create all sub directories. If you set this parameter to True, you should call the init_directory manually.
     """
 
     def __init__(
-        self, root, depth=4, width=1, algorithm="sha256", fmode=0o664, dmode=0o755
+        self, root, depth=2, width=2, algorithm="sha256", fmode=0o664, dmode=0o755,
+        sub_directory_created: bool = False,
     ):
-        self.root = os.path.realpath(root)
+        self.root = Path(root)
         self.depth = depth
         self.width = width
         self.algorithm = algorithm
         self.fmode = fmode
         self.dmode = dmode
+        self.sub_directory_created = sub_directory_created
 
-    def put(self, file, extension=None):
+    def init_all_sub_directory(self, directory=None, depth=None):
+        """
+        recursively create the hex directory to avoid check in following program
+        """
+        if depth == 0:
+            return
+        if depth is None:
+            depth = self.depth
+        if directory is None:
+            directory = self.root
+
+        create_hex_directory(directory, self.width)
+        for sub_directory in directory.iterdir():
+            self.init_all_sub_directory(
+                sub_directory,
+                depth=depth - 1,
+            )
+        self.sub_directory_created = True
+
+    def put(self, file, extension=None, hashid: str = ""):
         """Store contents of `file` on disk using its content hash for the
         address.
 
@@ -53,6 +77,7 @@ class HashFS(object):
             file (mixed): Readable object or path to file.
             extension (str, optional): Optional extension to append to file
                 when saving.
+            hashid: the hashid of the file, in case you computed it otherwhere
 
         Returns:
             HashAddress: File's hash address.
@@ -60,10 +85,11 @@ class HashFS(object):
         stream = Stream(file)
 
         with closing(stream):
-            id = self.computehash(stream)
-            filepath, is_duplicate = self._copy(stream, id, extension)
+            if not hashid:
+                hashid = self.computehash(stream)
+            filepath, is_duplicate = self._copy(stream, hashid, extension)
 
-        return HashAddress(id, self.relpath(filepath), filepath, is_duplicate)
+        return HashAddress(hashid, self.relpath(filepath), filepath, is_duplicate)
 
     def _copy(self, stream, id, extension=None):
         """Copy the contents of `stream` onto disk with an optional file
@@ -76,7 +102,8 @@ class HashFS(object):
             # Only move file if it doesn't already exist.
             is_duplicate = False
             fname = self._mktempfile(stream)
-            self.makepath(os.path.dirname(filepath))
+            if not self.sub_directory_created:
+                self.makepath(os.path.dirname(filepath))
             shutil.move(fname, filepath)
         else:
             is_duplicate = True
@@ -172,6 +199,7 @@ class HashFS(object):
             if len(os.listdir(subpath)) > 0 or os.path.islink(subpath):
                 break
             os.rmdir(subpath)
+            self.sub_directory_created = False
             subpath = os.path.dirname(subpath)
 
     def files(self):
@@ -307,7 +335,8 @@ class HashFS(object):
                     os.remove(path)
                 else:
                     # File doesn't exists so move it.
-                    self.makepath(os.path.dirname(address.abspath))
+                    if not self.sub_directory_created:
+                        self.makepath(os.path.dirname(address.abspath))
                     shutil.move(path, address.abspath)
 
                 os.chmod(address.abspath, self.fmode)

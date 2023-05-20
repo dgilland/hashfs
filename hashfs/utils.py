@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+from pathlib import Path
 
 
 def compact(items):
@@ -23,3 +24,19 @@ def shard(digest, depth, width):
         [digest[i * width : width * (i + 1)] for i in range(depth)]
         + [digest[depth * width :]]
     )
+
+
+def create_hex_directory(directory: Path,
+                     width: int):
+    """
+    create 16 ** width directories in the directory.
+
+    Args:
+        directory: the parent director
+        width: the name width of each subdirecory
+    """
+    for i in range(16**width):
+        sub_dir = directory.joinpath(
+            f'{i:0{width}x}'
+        )
+        sub_dir.mkdir(parents=True, exist_ok=True)
