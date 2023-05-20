@@ -2,6 +2,7 @@
 
 from io import StringIO, BufferedReader
 import os
+from pathlib import Path
 import string
 
 import py
@@ -26,7 +27,7 @@ def stringio():
     return StringIO(u"foo")
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def fileio(testfile):
     with open(str(testfile), "wb") as io:
         io.write(b"foo")
@@ -63,7 +64,7 @@ def assert_file_put(fs, address):
     assert address.abspath in tuple(py.path.local(fs.root).visit())
     assert fs.exists(address.id)
 
-    id = os.path.splitext(address.relpath.replace(os.path.sep, ""))[0]
+    id = os.path.splitext(str(address.relpath).replace(os.path.sep, ""))[0]
     assert id == address.id
 
     assert len(dir_parts) == fs.depth
@@ -110,7 +111,7 @@ def test_hashfs_put_extension(fs, stringio, extension):
     address = fs.put(stringio, extension)
 
     assert_file_put(fs, address)
-    assert os.path.sep in address.abspath
+    assert os.path.sep in str(address.abspath)
     assert os.path.splitext(address.abspath)[1].endswith(extension)
     assert not address.is_duplicate
 
@@ -123,9 +124,9 @@ def test_hashfs_put_error(fs):
 def test_hashfs_address(fs, stringio):
     address = fs.put(stringio)
 
-    assert fs.root not in address.relpath
-    assert os.path.join(fs.root, address.relpath) == address.abspath
-    assert address.relpath.replace(os.sep, "") == address.id
+    assert str(fs.root) not in str(address.relpath)
+    assert Path(fs.root, address.relpath) == address.abspath
+    assert str(address.relpath).replace(os.sep, "") == address.id
     assert not address.is_duplicate
 
 
@@ -187,7 +188,8 @@ def test_hashfs_delete(fs, stringio, address_attr):
     address = fs.put(stringio)
 
     fs.delete(getattr(address, address_attr))
-    assert len(os.listdir(fs.root)) == 0
+    if fs.root.exists():
+        assert len(list(fs.root.iterdir())) == 0
 
 
 def test_hashfs_delete_error(fs):
@@ -195,9 +197,9 @@ def test_hashfs_delete_error(fs):
 
 
 def test_hashfs_remove_empty(fs):
-    subpath1 = os.path.join(fs.root, "1", "2", "3")
-    subpath2 = os.path.join(fs.root, "1", "4", "5")
-    subpath3 = os.path.join(fs.root, "6", "7", "8")
+    subpath1 = Path(fs.root, "1", "2", "3")
+    subpath2 = Path(fs.root, "1", "4", "5")
+    subpath3 = Path(fs.root, "6", "7", "8")
 
     fs.makepath(subpath1)
     fs.makepath(subpath2)
@@ -286,7 +288,7 @@ def test_hashfs_iter(fs):
     for file in fs:
         test_count += 1
         assert os.path.isfile(file)
-        assert file in addresses
+        assert Path(file).absolute() in addresses
         assert addresses[file].abspath == file
         assert addresses[file].id == fs.unshard(file)
 

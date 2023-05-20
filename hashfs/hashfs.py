@@ -1,25 +1,27 @@
 """Module for HashFS class.
 """
 
+
 from collections import namedtuple
 from contextlib import contextmanager, closing
+from dataclasses import dataclass
+import io
 import glob
 import hashlib
-import sys
-import io
 import os
+from pathlib import Path
 import shutil
 from tempfile import NamedTemporaryFile
 
 from .utils import issubdir, shard
-from ._compat import to_bytes, walk, FileExistsError
+from ._compat import to_bytes, walk
 
 
 class HashFS(object):
     """Content addressable file manager.
 
     Attributes:
-        root (str): Directory path used as root of storage space.
+        root (Path): Directory path used as root of storage space.
         depth (int, optional): Depth of subfolders to create when saving a
             file.
         width (int, optional): Width of each subfolder to create when saving a
@@ -36,9 +38,9 @@ class HashFS(object):
     """
 
     def __init__(
-        self, root, depth=4, width=1, algorithm="sha256", fmode=0o664, dmode=0o755
+        self, root, depth=2, width=2, algorithm="sha256", fmode=0o664, dmode=0o755
     ):
-        self.root = os.path.realpath(root)
+        self.root = Path(root)
         self.depth = depth
         self.width = width
         self.algorithm = algorithm
@@ -76,7 +78,7 @@ class HashFS(object):
             # Only move file if it doesn't already exist.
             is_duplicate = False
             fname = self._mktempfile(stream)
-            self.makepath(os.path.dirname(filepath))
+            self.makepath(Path(filepath).parent)
             shutil.move(fname, filepath)
         else:
             is_duplicate = True
@@ -180,7 +182,7 @@ class HashFS(object):
         """
         for folder, subfolders, files in walk(self.root):
             for file in files:
-                yield os.path.abspath(os.path.join(folder, file))
+                yield Path(folder, file).absolute()
 
     def folders(self):
         """Return generator that yields all folders in the :attr:`root`
@@ -188,7 +190,7 @@ class HashFS(object):
         """
         for folder, subfolders, files in walk(self.root):
             if files:
-                yield folder
+                yield Path(folder)
 
     def count(self):
         """Return count of the number of files in the :attr:`root` directory.
@@ -221,14 +223,11 @@ class HashFS(object):
 
     def makepath(self, path):
         """Physically create the folder path on disk."""
-        try:
-            os.makedirs(path, self.dmode)
-        except FileExistsError:
-            assert os.path.isdir(path), "expected {} to be a directory".format(path)
+        path.mkdir(exist_ok=True, parents=True, mode=self.dmode)
 
-    def relpath(self, path):
+    def relpath(self, path: Path):
         """Return `path` relative to the :attr:`root` directory."""
-        return os.path.relpath(path, self.root)
+        return path.relative_to(self.root)
 
     def realpath(self, file):
         """Attempt to determine the real path of a file id or path through
@@ -241,8 +240,8 @@ class HashFS(object):
             return file
 
         # Check for relative path.
-        relpath = os.path.join(self.root, file)
-        if os.path.isfile(relpath):
+        relpath = self.root.joinpath(file)
+        if relpath.is_file():
             return relpath
 
         # Check for sharded path.
@@ -269,7 +268,7 @@ class HashFS(object):
         elif not extension:
             extension = ""
 
-        return os.path.join(self.root, *paths) + extension
+        return self.root.joinpath(*paths).with_suffix(extension)
 
     def computehash(self, stream):
         """Compute hash of file using :attr:`algorithm`."""
@@ -307,7 +306,7 @@ class HashFS(object):
                     os.remove(path)
                 else:
                     # File doesn't exists so move it.
-                    self.makepath(os.path.dirname(address.abspath))
+                    self.makepath(Path(address.abspath).parent)
                     shutil.move(path, address.abspath)
 
                 os.chmod(address.abspath, self.fmode)
@@ -353,22 +352,22 @@ class HashFS(object):
         return self.count()
 
 
-class HashAddress(
-    namedtuple("HashAddress", ["id", "relpath", "abspath", "is_duplicate"])
-):
+@dataclass
+class HashAddress:
     """File address containing file's path on disk and it's content hash ID.
 
     Attributes:
-        id (str): Hash ID (hexdigest) of file contents.
-        relpath (str): Relative path location to :attr:`HashFS.root`.
-        abspath (str): Absoluate path location of file on disk.
+        id (Path): Hash ID (hexdigest) of file contents.
+        relpath (Path): Relative path location to :attr:`HashFS.root`.
+        abspath (Path): Absoluate path location of file on disk.
         is_duplicate (boolean, optional): Whether the hash address created was
             a duplicate of a previously existing file. Can only be ``True``
             after a put operation. Defaults to ``False``.
     """
-
-    def __new__(cls, id, relpath, abspath, is_duplicate=False):
-        return super(HashAddress, cls).__new__(cls, id, relpath, abspath, is_duplicate)
+    id: str 
+    relpath: Path
+    abspath: Path
+    is_duplicate: bool = False
 
 
 class Stream(object):
